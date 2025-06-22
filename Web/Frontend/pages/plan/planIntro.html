@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+
+    <style>
+        .custom-image {
+            width: 100%;
+            max-width: 600px; /* 데스크톱 기준 최대 너비 */
+            height: auto;
+            display: block;
+            margin: 0 auto 20px auto;
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .content-box {
+            background-color: #f8f9fa;
+            border-radius: 1rem;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+
+        /* 미디어 쿼리: 모바일 화면일 경우 */
+        @media (max-width: 768px) {
+            .custom-image {
+                max-width: 100%;
+                border-width: 1px;
+            }
+
+            .content-box {
+                padding: 1rem;
+            }
+        }
+    </style>
+
+</head>
+<body class="d-flex flex-column">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <!-- Page content-->
+    <section class="py-5">
+        <div class="container px-4">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-11 col-xl-9 col-xxl-8">
+                    <div class="card shadow border-0 mb-5 p-3 custom-card">
+                        <!-- Contact form-->
+                        <div class="rounded-4 py-5 px-4 px-md-5">
+                            <div class="row gx-5 justify-content-center">
+                                <div class="col-lg-8 col-xl-6">
+                                    <div class="text-center mb-4">
+                                        <h2 class="fw-bold">요금제 소개</h2>
+                                        <p class="text-muted">원하는 요금제를 선택하세요</p>
+                                    </div>
+                                    <div class="text-center">
+                                        <p class="text-muted">모든 요금제는 회원가입 후 이용 가능합니다.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <!-- Free Section -->
+                    <section>
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <h2 class="text-primary fw-bolder mb-0">Free</h2>
+                        </div>
+                        <div class="card shadow border-0 rounded-4 mb-5">
+                            <div class="card-body px-2 py-3">
+                                <div class="row align-items-center gx-5">
+                                    <div class="col text-center text-lg-start mb-4 mb-lg-0">
+                                        <div class="bg-light p-4 rounded-4">
+                                            <div class="text-center">
+                                                <div class="text-primary fw-bolder fs-3 mb-2">₩0</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="mb-0">
+
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered table-hover align-middle">
+                                                    <thead class="table-light">
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td class="fw-bold">콘텐츠 생성 가능 횟수</td>
+                                                        <td>1일 15회</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">콘텐츠 즉시 다운로드</td>
+                                                        <td>
+                                                            <i class="bi bi-check-square-fill text-success" data-bs-toggle="tooltip" title="사용 가능"></i>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">콘텐츠 서버 저장 및 조회</td>
+                                                        <td>
+                                                            <i class="bi bi-x-square-fill text-danger" data-bs-toggle="tooltip" title="미지원"></i>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">감정 통계 제공(그래프, 점수 등)</td>
+                                                        <td>
+                                                            <i class="bi bi-x-square-fill text-danger" data-bs-toggle="tooltip" title="미지원"></i>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- 버튼 영역 -->
+                                            <div class="mt-3 text-end">
+                                                <a th:if="${currentPlan} == 'anonymousUser'" href="/members/register" class="btn btn-outline-primary btn-lg">
+                                                    Free 가입하기
+                                                </a>
+                                                <th:block th:if="${currentPlan} != 'anonymousUser'">
+                                                    <button th:if="${currentPlan == 'free'}" class="btn btn-outline-secondary btn-lg">
+                                                        구독 중 <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                </th:block>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Premium Section -->
+                    <section>
+                        <h2 class="text-secondary fw-bolder mb-4">Premium</h2>
+                        <div class="card shadow border-0 rounded-4 mb-5">
+                            <div class="card-body px-2 py-3">
+                                <div class="row align-items-center gx-5">
+                                    <div class="col text-center text-lg-start mb-4 mb-lg-0">
+                                        <div class="bg-light p-4 rounded-4">
+                                            <div class="text-center">
+                                                <div class="text-primary fw-bolder fs-3 mb-2">₩5,900</div>
+                                                <div class="text-muted fs-6">30일동안 제공됨</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-lg-8">
+                                        <div class="mb-0">
+                                            <div class="table-responsive">
+                                                <table class="table table-bordered table-hover align-middle">
+                                                    <thead class="table-light">
+                                                    </thead>
+                                                    <tbody>
+                                                    <tr>
+                                                        <td class="fw-bold">콘텐츠 생성 가능 횟수</td>
+                                                        <td>1일 100회</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">콘텐츠 즉시 다운로드</td>
+                                                        <td>
+                                                            <i class="bi bi-check-square-fill text-success" data-bs-toggle="tooltip" title="사용 가능"></i>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">콘텐츠 서버 저장 및 조회</td>
+                                                        <td>
+                                                            <i class="bi bi-check-square-fill text-success" data-bs-toggle="tooltip" title="사용 가능"></i>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="fw-bold">감정 통계 제공(그래프, 점수 등)</td>
+                                                        <td>
+                                                            <i class="bi bi-check-square-fill text-success" data-bs-toggle="tooltip" title="사용 가능"></i>
+                                                        </td>
+                                                    </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+
+                                            <!-- 버튼 영역 -->
+                                            <div class="mt-3 text-end">
+                                                <a th:if="${currentPlan} == 'anonymousUser'" href="/members/register" class="btn btn-outline-primary btn-lg">
+                                                    Premium 가입하기
+                                                </a>
+                                                <th:block th:if="${currentPlan} != 'anonymousUser'">
+                                                    <button th:if="${currentPlan == 'premium'}" class="btn btn-outline-secondary btn-lg">
+                                                        구독 중 <i class="bi bi-check-lg"></i>
+                                                    </button>
+                                                    <a href="/pages/plan/payment" class="btn btn-primary btn-lg">
+                                                        <span th:text="${currentPlan == 'premium' ? '유효기간 연장' : 'Premium 업그레이드'}"></span>
+                                                    </a>
+                                                </th:block>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Skills Section -->
+                    <section>
+                        <div class="text-center mb-4">
+                            <h2 class="fw-bolder mb-0"><span class="text-gradient d-inline">멤버십 혜택</span></h2>
+                        </div>
+
+                        <div class="card shadow border-0 rounded-4 mb-5">
+                            <div class="card-body px-2 py-3">
+                                <!-- 1일 100회 -->
+                                <div class="mb-5">
+                                    <div class="d-flex align-items-center mb-4">
+                                        <div class="feature bg-primary bg-gradient-primary-to-secondary text-white rounded-3 me-3">
+                                            <i class="bi bi-tools"></i>
+                                        </div>
+                                        <h3 class="fw-bolder mb-0">
+                                            <span class="text-gradient d-inline">1일 100회의 콘텐츠 생성</span>
+                                        </h3>
+                                    </div>
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-8">
+                                            <div class="bg-light rounded-4 shadow-sm p-4 text-start">
+                                                하루마다 100회의 맞춤형 콘텐츠를 생성 해보세요
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+
+                                <!-- 콘텐츠 서버 저장 및 조회 -->
+                                <div class="mb-5">
+                                    <div class="d-flex align-items-center mb-4">
+                                        <div class="feature bg-primary bg-gradient-primary-to-secondary text-white rounded-3 me-3">
+                                            <i class="bi bi-sd-card-fill"></i>
+                                        </div>
+                                        <h3 class="fw-bolder mb-0">
+                                            <span class="text-gradient d-inline">콘텐츠를 서버에 보관</span>
+                                        </h3>
+                                    </div>
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-8">
+                                            <img src="/assets/server-storage.png" alt="서버 저장" class="custom-image">
+                                            <div class="content-box">
+                                                콘텐츠를 서버에 저장하고 언제든 다운로드 가능합니다
+                                            </div>
+
+                                            <img src="/assets/image-view-date.png" alt="콘텐츠 날짜 조회" class="custom-image">
+                                            <div class="content-box">
+                                                콘텐츠를 날짜별 조회가 가능합니다
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- 감정 통계 제공(그래프, 점수 등) -->
+                                <div class="mb-5">
+                                    <div class="d-flex align-items-center mb-4">
+                                        <div class="feature bg-primary bg-gradient-primary-to-secondary text-white rounded-3 me-3">
+                                            <i class="bi bi-calculator"></i>
+                                        </div>
+                                        <h3 class="fw-bolder mb-0">
+                                            <span class="text-gradient d-inline">나의 감정을 분석</span>
+                                        </h3>
+                                    </div>
+                                    <div class="row justify-content-center">
+                                        <div class="col-md-8">
+                                            <img src="/assets/emotion-score.png" alt="감정 점수" class="custom-image">
+                                            <div class="content-box">
+                                                사용자의 감정 데이터를 기반으로 점수를 측정합니다
+                                            </div>
+
+                                            <img src="/assets/chart1.png" alt="차트1" class="custom-image mb-2">
+                                            <img src="/assets/chart2.png" alt="차트2" class="custom-image">
+                                            <div class="content-box">
+                                                사용자의 감정 데이터를 차트로 보여줍니다
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+
+</script>
+</body>
+</html>

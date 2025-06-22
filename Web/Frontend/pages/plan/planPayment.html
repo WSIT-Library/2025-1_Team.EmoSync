@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+
+</head>
+<body class="d-flex flex-column">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <!-- Page content-->
+    <section class="py-5">
+        <div class="container px-4">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-11 col-xl-9 col-xxl-8">
+                    <div class="card shadow border-0 mb-5 p-3">
+                        <!-- Contact form-->
+                        <div class="rounded-4 py-5 px-2 px-md-2">
+                            <div class="row gx-5 justify-content-center">
+                                <div class="col-lg-8 col-xl-6">
+                                    <div class="text-center mb-4">
+                                        <h2 class="fw-bold">요금제 정보</h2>
+                                        <p class="text-muted">아래에서 가입할 요금제를 확인하세요</p>
+                                    </div>
+
+                                    <div class="accordion mb-3" id="accordionCurrent">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="CurrentHeading">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#CurrentOne" aria-expanded="false" aria-controls="CurrentOne">
+                                                    현재 가입된 요금제 정보
+                                                </button>
+                                            </h2>
+                                            <div id="CurrentOne" class="accordion-collapse collapse show" aria-labelledby="CurrentHeading" data-bs-parent="#accordionCurrent">
+                                                <div class="accordion-body">
+                                                    <div class="card border-1 rounded-4">
+                                                        <div class="card-body p-5 position-relative">
+                                                            <!-- 아이콘 배경 효과 -->
+                                                            <div class="position-absolute top-0 end-0 p-3 text-secondary opacity-25" style="font-size: 4rem;">
+                                                                <i class="bi bi-credit-card"></i> <!-- Bootstrap 아이콘 (요금제 느낌) -->
+                                                            </div>
+
+                                                            <h4 class="card-title mb-4 fw-bold text-dark">가입된 요금제 정보</h4>
+
+                                                            <div class="mb-3">
+                                                                <h6 class="text-muted mb-1" data-bs-toggle="modal" data-bs-target="#modalPlanInfo">요금제 종류 <i class="bi bi-question-circle-fill"></i></h6>
+                                                                <p class="fs-5 text-primary fw-semibold mb-0" th:text="${UserInfo.getPlan()}"></p>
+                                                            </div>
+
+                                                            <div th:if="${UserInfo.getPlan()} == 'premium'" class="mb-3">
+                                                                <h6 class="text-muted mb-1">플랜 만료일</h6>
+                                                                <p class="fs-5 text-danger fw-semibold mb-0" th:text="${#temporals.format(UserInfo.getSubscription_end_date(), 'yyyy-MM-dd')}"></p>
+                                                            </div>
+
+                                                            <div class="text-muted">([[${currentTime}]] 기준)</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="accordion mb-3" id="accordionSelect">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="selectHeading">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#selectOne" aria-expanded="true" aria-controls="collapseOne">
+                                                    선택한 요금제 상세 정보
+                                                </button>
+                                            </h2>
+                                            <div id="selectOne" class="accordion-collapse collapse show" aria-labelledby="selectHeading" data-bs-parent="#accordionSelect">
+                                                <div class="accordion-body">
+                                                    <table class="modal-table">
+                                                        <thead>
+                                                        <tr>
+                                                            <th>종류</th>
+                                                            <th>Premium</th>
+                                                        </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                        <tr><td>유효기간</td><td>30일</td></tr>
+                                                        <tr><td>일일 콘텐츠 생성 가능 횟수</td><td>100회</td></tr>
+                                                        <tr><td>가격</td><td>5,900원</td></tr>
+                                                        <tr><td>콘텐츠 즉시 다운로드</td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td></tr>
+                                                        <tr><td>콘텐츠 서버 저장 및 조회</td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td></tr>
+                                                        <tr><td>감정 통계 제공 (그래프, 점수 등)</td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td></tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="accordion mb-3" id="accordionExample">
+                                        <div class="accordion-item">
+                                            <h2 class="accordion-header" id="headingOne">
+                                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                                    결제 전 최종 확인
+                                                </button>
+                                            </h2>
+                                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                                                <div class="accordion-body">
+                                                    <ul class="list-group">
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            선택한 요금제
+                                                            <span class="fs-5 fw-bold p-2">Premium</span>
+                                                        </li>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            플랜 만료일
+                                                            <span class="fs-5 fw-bold p-2" th:text="${#temporals.format(subscription_end_date, 'yyyy-MM-dd')}"></span>
+                                                        </li>
+                                                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                                                            결제 금액
+                                                            <span class="fs-5 fw-bold p-2">5,900원</span>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="d-grid">
+                                        <button type="button" class="btn btn-lg btn-outline-primary d-block text-center mb-1" th:onclick="kg_request_pay()">결제하기</button>
+                                        <a href="/pages/plan/intro" class="btn btn-lg btn-outline-primary d-block text-center">
+                                            뒤로 가기
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    function kg_request_pay() {
+
+        // 데이터 값
+        let buyer_email = /*[[${UserInfo.email}]]*/;
+        let buyer_name = /*[[${UserInfo.name}]]*/;
+        let buyer_id = /*[[${UserInfo.id}]]*/;
+
+        //kg 이니시스 결제 API
+        let IMP = window.IMP; // 생략가능
+        IMP.init('imp71444166');  // 가맹점 식별코드
+
+        // IMP.request_pay(param, callback) 결제창 호출
+        IMP.request_pay({
+            pg: "html5_inicis",
+            pay_method: "card",
+            merchant_uid: "gpay_" + new Date().getTime(),   // 주문번호
+            name: "EmoSync Premium 요금제",
+            amount: 5900,                         // 숫자 타입
+            buyer_email: buyer_email,
+            buyer_name: buyer_name,
+        }, function (rsp) { // callback
+            console.log(rsp);
+            if ( rsp.success ) { //결제 성공시
+                alert('결제가 완료되었습니다.');
+
+                const date = new Date();
+                // UTC 시간을 한국 시간으로 변환
+                const koreanTime = new Date(date.getTime() + (9 * 60 * 60 * 1000));
+                // ISO 문자열로 변환하고 밀리초와 'Z' 제거
+                const isoStringWithoutMillis = koreanTime.toISOString().slice(0, 19);
+
+                let result = {
+                    "mpaynum" : rsp.merchant_uid, //결제번호
+                    "memberid" :buyer_id, //회원 ID
+                    "membername" :buyer_name, // 회원 이름
+                    "mpaymethod":rsp.pay_method, //결제수단
+                    "mpayproduct":rsp.name, // 상품명
+                    "mpayprice":rsp.paid_amount, // 결제금액
+                    "mpaydate" : isoStringWithoutMillis, //결제일
+                }
+                console.log(result);
+
+                $.ajax({
+                    url:'/pages/plan/payment/insertMPay',
+                    type:'POST',
+                    contentType: 'application/json',
+                    data:JSON.stringify(result),
+                    success: function (res) {
+                        console.log(res);
+                        location.href=res;
+                    },
+                    error: function (err) {
+                        console.log(err);
+                    }
+                }); //ajax
+            } else {
+                let msg = '결제 실패';
+                msg += '\n에러내용 : ' + rsp.error_msg;
+            }
+            alert(msg);
+        });
+    }
+    /*]]>*/
+</script>
+</body>
+</html>
