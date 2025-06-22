@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+
+    <style>
+        .custom-card {
+            border-radius: 0 0 1rem 1rem;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <!-- Page content-->
+    <section class="py-5">
+        <div class="container px-4">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-11 col-xl-9 col-xxl-8">
+                    <ul class="nav nav-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/members/MyPage_UserInfo">회원정보</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/members/MyPage_UserPlan">요금제</a>
+                        </li>
+                    </ul>
+                    <div class="card shadow border-0 mb-5 p-3 custom-card">
+                    <!-- Contact form-->
+                        <div class="rounded-4 py-5 px-4 px-md-5">
+                            <div class="text-center mb-5">
+                                <div class="feature bg-primary bg-gradient-primary-to-secondary text-white rounded-3 mb-3"><i class="bi bi-person-circle"></i></div>
+                                <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">회원 정보</span></h1>
+                                <p class="lead fw-normal text-muted mb-0"></p>
+                            </div>
+                            <div class="row gx-5 justify-content-center">
+                                <div class="col-lg-8 col-xl-6">
+                                    <!--아이디-->
+                                    <div class="row mb-3 justify-content-center">
+                                        <div class="col-md-10">
+                                            <div class="form-floating mb-3 mb-md-0">
+                                                <input class="form-control" type="text" th:value="${UserInfo.id}" id="userId" disabled/>
+                                                <label for="userId">아이디</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1"></div>
+                                    </div>
+
+                                    <!--비밀번호-->
+                                    <div class="row mb-3 justify-content-center">
+                                        <div class="col-md-10">
+                                            <div class="form-floating mb-3 mb-md-0">
+                                                <input class="form-control" type="password" id="userPassword" disabled/>
+                                                <label for="userPassword">비밀번호</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1 text-end">
+                                            <div class="form-floating">
+                                                <input type="button" class="btn btn-outline-primary" value="비밀번호 변경" onclick="location.href='/members/updatePassword'">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!--이름-->
+                                    <div class="row mb-3 justify-content-center">
+                                        <div class="col-md-10">
+                                            <div class="form-floating mb-3 mb-md-0">
+                                                <input class="form-control" type="text" th:value="${UserInfo.name}" id="userName" disabled/>
+                                                <label for="userName">이름</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1"></div>
+                                    </div>
+
+                                    <!-- 이메일-->
+                                    <div class="row mb-3 justify-content-center">
+                                        <div class="col-md-10">
+                                            <div class="form-floating mb-3 mb-md-0">
+                                                <input class="form-control" type="text" th:value="${UserInfo.email}" id="email" disabled/>
+                                                <label for="email">이메일</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-1 text-end">
+                                            <div class="form-floating">
+                                                <input type="button" class="btn btn-outline-primary" value="이메일 변경" onclick="location.href='/members/updateEmail_Auth'">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <br>
+                            <div class="small float-end"><a class="a_tag_style" href="/members/deleteMember">회원탈퇴를 원하신다면 클릭</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+
+</script>
+</body>
+</html>

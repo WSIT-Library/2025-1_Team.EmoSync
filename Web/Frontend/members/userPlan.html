@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+
+    <style>
+        .custom-card {
+            border-radius: 0 0 1rem 1rem;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <!-- Page content-->
+    <section class="py-5">
+        <div class="container px-4">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-11 col-xl-9 col-xxl-8">
+                    <ul class="nav nav-tabs">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/members/MyPage_UserInfo">회원정보</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" aria-current="page" href="/members/MyPage_UserPlan">요금제</a>
+                        </li>
+                    </ul>
+                    <div class="card shadow border-0 mb-5 p-3 custom-card">
+                        <!-- Contact form-->
+                        <div class="rounded-4 py-5 px-4 px-md-5">
+                            <div class="row gx-5 justify-content-center">
+                                <div class="col-lg-8 col-xl-6">
+                                    <div class="card border-1 rounded-4">
+                                        <div class="card-body p-5 position-relative">
+                                            <!-- 아이콘 배경 효과 -->
+                                            <div class="position-absolute top-0 end-0 p-3 text-secondary opacity-25" style="font-size: 4rem;">
+                                                <i class="bi bi-credit-card"></i> <!-- Bootstrap 아이콘 (요금제 느낌) -->
+                                            </div>
+
+                                            <h4 class="card-title mb-4 fw-bold text-dark">가입한 요금제 정보</h4>
+
+                                            <div class="mb-3">
+                                                <h6 class="text-muted mb-1" data-bs-toggle="modal" data-bs-target="#modalPlanInfo">요금제 종류 <i class="bi bi-question-circle-fill"></i></h6>
+                                                <p class="fs-5 text-primary fw-semibold mb-0" th:text="${UserInfo.getPlan()}"></p>
+                                            </div>
+
+                                            <div th:if="${UserInfo.getPlan()} == 'premium'">
+                                                <h6 class="text-muted mb-1">플랜 만료일</h6>
+                                                <p class="fs-5 text-danger fw-semibold mb-0" th:text="${#temporals.format(UserInfo.getSubscription_end_date(), 'yyyy-MM-dd')}"></p>
+
+                                                <!-- 유효기한 연장 버튼 -->
+                                                <div class="mt-3">
+                                                    <a href="/pages/plan/payment" class="btn btn-outline-danger">기간 연장</a>
+                                                </div>
+                                            </div>
+
+                                            <!-- 요금제 변경 버튼 (모든 요금제에서 노출) -->
+                                            <div th:if="${UserInfo.getPlan()} == 'free'" class="mt-4">
+                                                <a href="/pages/plan/payment" class="btn btn-primary">요금제 변경</a>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- 모달 (요금제 정보) -->
+<div class="modal fade" id="modalPlanInfo" tabindex="-1" aria-labelledby="modalPlanInfoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalPlanInfoLabel">요금제 정보</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalPlanInfo_body">
+                <table class="modal-table">
+                    <thead>
+                    <tr>
+                        <th>종류</th>
+                        <th>Free</th>
+                        <th>Premium</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr><td>유효기간</td><td> - </td><td>30일</td></tr>
+                    <tr><td>콘텐츠 생성 가능 횟수</td><td>1일 15회</td><td>1일 100회</td></tr>
+                    <tr><td>가격</td><td>0원</td><td>5,900원</td></tr>
+                    <tr><td>콘텐츠 즉시 다운로드</td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td></tr>
+                    <tr><td>콘텐츠 서버 저장 및 조회</td><td><i class="bi bi-x-square-fill" style="color: red;"></i></td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td></tr>
+                    <tr><td>감정 통계 제공 (그래프, 점수 등)</td><td><i class="bi bi-x-square-fill" style="color: red;"></i></td><td><i class="bi bi-check-square-fill" style="color: green;"></i></td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted ms-3"><i class="bi bi-info-circle-fill"></i> 콘텐츠 생성 가능 횟수는 매일 자정 초기화</p>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+
+</script>
+</body>
+</html>

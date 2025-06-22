@@ -1,0 +1,22 @@
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>요청 성공</title>
+</head>
+<body>
+<input type="hidden" id="message" th:value="${message}">
+<script src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+    const msg = $("#message").val();
+    if (window.confirm(msg + "(이)가 정상적으로 변경되었습니다."))
+    {
+        window.location.href = "/members/MyPage_UserInfo"
+    }
+    else
+    {
+        window.location.href = "/members/MyPage_UserInfo"
+    }
+</script>
+</body>
+</html>

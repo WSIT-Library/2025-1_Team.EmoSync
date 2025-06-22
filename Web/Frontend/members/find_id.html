@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+</head>
+<body class="d-flex flex-column">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <!-- Page content-->
+    <section class="py-5">
+        <div class="container px-4">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-11 col-xl-9 col-xxl-8">
+                    <div class="card shadow border-0 rounded-4 mb-5 p-3">
+                        <!-- Contact form-->
+                        <div class="rounded-4 py-5 px-4 px-md-5">
+                            <div class="text-center mb-5">
+                                <h1 class="display-5 fw-bolder mb-0"><span class="text-gradient d-inline"><a href="/pages/index">EmoSync</a></span></h1>
+                                <h3 class="fw-bolder">아이디 찾기</h3>
+                                <p class="lead fw-normal text-muted mb-0"></p>
+                            </div>
+                            <div class="row gx-5 justify-content-center">
+                                <div class="row justify-content-center text-danger mb-3 text-center">
+                                    <i class="bi bi-info-circle-fill">회원정보에 저장된 이메일 주소를 입력해주세요.</i>
+                                </div>
+                                <div class="col-lg-8 col-xl-8">
+                                    <div class="row mb-5">
+                                        <div class="col-md-8">
+                                            <div class="form-floating mb-3">
+                                                <input type="text" class="form-control" name="email" id="email" data-bs-toggle="tooltip" data-bs-placement="bottom" title="ex) test123@test.com"
+                                                       placeholder="" maxlength="50" oninput="emailRegexCheck()" required>
+                                                <label for="email">이메일 주소 입력 <span id="EmailRegexConfirm"></span></label>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4 text-end">
+                                            <button class="btn btn-outline-primary col-6 mx-auto email_CheckBtn" type="button" onclick="checkEmail()">확인</button>
+                                            <button type="button" class="btn btn-outline-primary" onclick="reset_tag('email', '이메일')"><i class="bi bi-arrow-clockwise"></i></button>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between mt-4 mb-3">
+                                        <button class="btn btn-primary col-8 mx-auto" type="button" onclick="sendEmail()">이메일로 아이디 전송</button>
+                                    </div>
+                                    <div class="form-check mt-3 text-center">
+                                        <a class="small a_tag_style" href="/members/login">로그인</a>
+                                        <span> | </span>
+                                        <a class="small a_tag_style" href="/members/find_pw_IdAuth">비밀번호 찾기</a>
+                                    </div>
+                                    <div class="card-footer bg-white text-center py-3" style="border: none;">
+                                        <div class="small"><a class="a_tag_style" href="/members/register">아직 회원이 아니라면 회원가입</a></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+    // tooltip 초기화
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+
+    // 회원 정보에 등록된 이메일인지 확인 여부
+    let EmailExist = false;
+
+
+    // 회원정보에 등록된 이메일 인지 확인
+    function checkEmail(){
+        const email = $('#email');
+        const email_CheckBtn = $('.email_CheckBtn');
+
+        if (email.val() === "" || email.val() == null || (typeof email.val() == "object" && !Object.keys(email.val()).length)) {
+            alert("이메일 주소를 입력해주세요.");
+            return;
+        }
+
+        // 정규식 검사
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,50}$/;
+        if(!emailRegex.test(email.val())){
+            alert("이메일 형식이 올바르지 않습니다.");
+            $('#EmailRegexConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+            email.css('border-color','red');
+            email.focus();
+            return;
+        }
+
+        $.ajax({
+            url: "/infoCheck/EmailExist",
+            type: "POST",
+            data: {
+                "email": email.val()
+            },
+            success: function(isCodeCorrect) {
+                if (isCodeCorrect) {
+                    alert("회원 정보에 등록된 이메일 입니다.");
+                    EmailExist = true;
+                    email.prop('readonly', true);
+                    $('#EmailRegexConfirm').html('<i class="bi bi-check-circle-fill"></i>').css('color', 'green')
+                    email.css('border-color','green');
+                    email_CheckBtn.attr("disabled", true);
+                } else {
+                    alert("등록되지 않은 이메일 주소 입니다.");
+                    $('#EmailRegexConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+                    email.css('border-color','red');
+                    email.focus();
+                }
+            },
+            error: function() {
+                alert("이메일 확인에 실패했습니다.");
+            }
+        });
+
+    }
+
+    // 다시 작성 버튼 이벤트
+    function reset_tag(_id, _name){
+        let btn_class = _id +"_CheckBtn" // 비밀번호/인증번호 확인 버튼값 id 저장
+
+        if (window.confirm(_name + '을(를) 다시 작성하시겠습니까?\n입력한 내용은 저장되지 않습니다.'))
+        {
+            // 다시 작성하기 때문에 인증 여부 초기화
+            if(_id === 'email'){
+                EmailExist= false;
+                $('#EmailRegexConfirm').text('').css('color', 'black')
+            }
+            // 해당 태그 찾아서 값 초기화 시키고 readonly 해제
+            let input = document.getElementById(_id);
+            input.value = null;
+            input.readOnly = false;
+            $("#" + _id).css('border-color','black');
+            $("." + btn_class).attr("disabled", false);
+        }
+    }
+
+    // 이메일로 아이디 발송
+    function sendEmail() {
+
+        const email = $("#email").val(); // 사용자가 입력한 이메일 주소
+        // 이메일칸이 비어있으면 알림
+        if (!email || email.trim() === '') {
+            alert("이메일 주소를 입력해주세요.");
+            return;
+        }
+        // 이메일 존재 여부 검사 했는지 확인
+        if (!EmailExist) {
+            alert("이메일 확인을 진행해주세요.");
+            return;
+        }
+        else{
+            alert("이메일 전송 중 입니다. 알림창을 닫고 잠시만 기다려주세요.\n(약 3~5초 정도 소요)");
+        }
+
+        $.ajax({
+            url: "/infoCheck/sendEmail_find",
+            type: "POST",
+            data: {
+                "email": email
+            },
+            success: function(data) {
+                // 이메일 전송 성공
+                alert("이메일로 아이디가 전송되었습니다.");
+            },
+            error: function() {
+                // 이메일 전송 실패
+                alert("이메일 전송에 실패했습니다.");
+            }
+        });
+    }
+</script>
+</body>
+</html>

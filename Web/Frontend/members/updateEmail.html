@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+</head>
+<body class="d-flex flex-column">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <!-- Page content-->
+    <section class="py-5">
+        <div class="container px-4">
+            <div class="row gx-5 justify-content-center">
+                <div class="col-lg-11 col-xl-9 col-xxl-8">
+                    <div class="card shadow border-0 rounded-4 mb-5 p-3">
+                        <!-- Contact form-->
+                        <div class="rounded-4 py-5 px-2 px-md-5">
+                            <div class="text-center mb-5">
+                                <div class="feature bg-primary bg-gradient-primary-to-secondary text-white rounded-3 mb-3"><i class="bi bi-person-fill-gear"></i></div>
+                                <h1 class="fw-bolder">이메일 변경</h1>
+                                <p class="lead fw-normal text-muted mb-0"></p>
+                            </div>
+                            <div class="row gx-5 justify-content-center">
+                                <div class="row justify-content-center text-danger mb-3 text-center">
+                                    <i class="bi bi-info-circle-fill">새로 변경할 이메일 유효성 검사를 위해 인증이 필요합니다.</i>
+                                </div>
+                                <div class="col-lg-8 col-xl-8">
+                                    <form name="email_change_form" action="/members/req_update_email" method="post" onsubmit="return checkField()">
+                                        <input type="hidden" name="id" id="userId" th:value="${userId}">
+                                        <!--새로운 이메일-->
+                                        <div class="row mb-3">
+                                            <div class="col-md-8">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input class="form-control" type="text" name="newEmail" id="newEmail" placeholder="이메일 주소 입력" maxlength="50" oninput="emailRegexCheck()" required/>
+                                                    <label for="newEmail">이메일 <span id="EmailRegexConfirm"></span></label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4 text-end">
+                                                <div class="form-floating">
+                                                    <input type="button" class="btn btn-outline-primary newEmail_CheckBtn" value="중복검사" onclick="checkEmail()">
+                                                    <button type="button" class="btn btn-outline-primary" onclick="reset_tag('newEmail', '이메일')"><i class="bi bi-arrow-clockwise"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!--인증번호-->
+                                        <div class="row mb-3 justify-content-center">
+                                            <div class="col-md-4">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input class="form-control" type="text" name="inputCode" id="inputCode" placeholder="인증번호 6자리"
+                                                           pattern="^\d{6}$" minlength="1" maxlength="6" title="조건: 숫자 6자리" required/>
+                                                    <label for="inputCode">인증번호 <span id="inputCodeConfirm"></span></label>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-7 text-end">
+                                                <div class="form-floating mb-3 mb-md-0">
+                                                    <input type="button" class="btn btn-outline-primary inputCode_CheckBtn" value="번호전송" onclick="sendEmail()">
+                                                    <input type="button" class="btn btn-outline-primary inputCode_CheckBtn" value="번호확인" onclick="verifyCode()">
+                                                    <button type="button" class="btn btn-outline-primary" onclick="reset_tag('inputCode', '이메일 인증번호')"><i class="bi bi-arrow-clockwise"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <br>
+                                        <div class="d-flex align-items-center justify-content-between mt-4 mb-0">
+                                            <button class="btn btn-primary col-8 mx-auto" type="submit">변경하기</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+    // email 중복 체크 했는지 확인하기 위한 변수
+    let EmailDuplicationCheck = false;
+
+    // 이메일 인증번호 전송 여부
+    let EmailSend= false;
+
+    // 이메일 인증번호 확인 여부
+    let EmailAuthCheck = false;
+
+    // 새로운 비밀번호 정규식 조건 충족 여부
+    let newEmailCheckRegex = false;
+
+    // 새로운 이메일 정규식 검사
+    function emailRegexCheck(){
+        const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+        let userEmail = $('#newEmail');
+        if(emailRegex.test(userEmail.val())){
+            $('#EmailRegexConfirm').html('<i class="bi bi-check-circle-fill"></i>').css('color', 'green')
+            userEmail.css('border-color','green');
+            newEmailCheckRegex = true;
+        }
+        else{
+            $('#EmailRegexConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+            userEmail.css('border-color','red');
+            newEmailCheckRegex = false;
+        }
+    }
+
+    // 다시 작성 버튼 이벤트
+    function reset_tag(_id, _name){
+        let btn_class = _id +"_CheckBtn" // 비밀번호/인증번호 확인 버튼값 id 저장
+
+        if (window.confirm(_name + '을(를) 다시 작성하시겠습니까?\n입력한 내용은 저장되지 않습니다.'))
+        {
+            // 다시 작성하기 때문에 인증 여부 초기화
+            if (_id === 'inputCode'){
+                EmailSend = EmailAuthCheck = false;
+            }
+            else if(_id === 'email'){
+                newEmailCheckRegex = EmailDuplicationCheck = false;
+                $('#EmailRegexConfirm').text('').css('color', 'black')
+            }
+            // 해당 태그 찾아서 값 초기화 시키고 readonly 해제
+            let input = document.getElementById(_id);
+            input.value = null;
+            input.readOnly = false;
+            $("#" + _id).css('border-color','black');
+            $("." + btn_class).attr("disabled", false);
+        }
+    }
+
+
+    // 새로운 email 중복 체크
+    function checkEmail(){
+        let userEmail = $('#newEmail');
+
+        if(userEmail.val() === "" || userEmail.val() == null || (typeof userEmail.val() == "object" && !Object.keys(userEmail.val()).length)){
+            alert("이메일을 입력하세요.");
+            userEmail.css('border-color','red');
+            $('#EmailRegexConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+            return false;
+        }
+
+        if(!newEmailCheckRegex){
+            alert('이메일 형식이 올바르지 않습니다. 다시 입력해 주세요.');
+            userEmail.css('border-color','red');
+            $('#EmailRegexConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+            return false;
+        }
+
+        $.ajax({
+            type: "get",
+            url: "/members/EmailCheck/" + userEmail.val()
+        }).done((res) => {
+            if (res.data === true) {
+                alert(res.msg);
+                EmailDuplicationCheck = true;
+                userEmail.css('border-color','green');
+                $('#EmailRegexConfirm').html('<i class="bi bi-check-circle-fill"></i>').css('color', 'green')
+                $('.newEmail_CheckBtn').attr("disabled", true);
+                userEmail.prop('readonly', true);
+            } else {
+                alert(res.msg);
+                userEmail.css('border-color','red');
+                $('#EmailRegexConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+            }
+
+        }).fail((err) => {
+            alert("알 수 없는 오류가 발생했습니다. 잠시후 이용해 주세요.");
+            console.log("userEmail: " + userEmail.val());
+            console.log('상태코드 200밖에 없어서 실행 안됨')
+        });
+    }
+
+
+    // 새로운 이메일로 인증번호 발송
+    function sendEmail() {
+
+        const email = $("#newEmail").val(); // 사용자가 입력한 이메일 주소
+        // 이메일칸이 비어있으면 알림
+        if (!email || email.trim() === '') {
+            alert("이메일 주소를 입력해주세요.");
+            return;
+        }
+        // 이메일 중복 체크 했는지 확인
+        if (!EmailDuplicationCheck) {
+            alert("이메일 중복검사를 진행해주세요.");
+            return;
+        }
+        else{
+            alert("인증번호 전송 중 입니다. 알림창을 닫고 잠시만 기다려주세요.\n(약 3~5초 정도 소요)");
+        }
+
+        $.ajax({
+            url: "/infoCheck/sendEmail",
+            type: "POST",
+            data: {
+                "email": email
+            },
+            success: function(data) {
+                // 이메일 전송 성공
+                EmailSend = true; // 이메일 전송 여부 체크
+                alert("인증번호가 전송되었습니다.");
+            },
+            error: function() {
+                // 이메일 전송 실패
+                alert("인증번호 전송에 실패했습니다.");
+            }
+        });
+    }
+
+    // 새로운 이메일 인증번호 확인
+    function verifyCode() {
+        // 이메일 인증번호를 전송 했는지 확인
+        if (!EmailSend){
+            alert("인증번호를 전송해주세요.");
+            return;
+        }
+        const email_btn = $(".inputCode_CheckBtn");
+        const inputCode = $("#inputCode"); // 사용자가 입력한 인증번호
+        if (!inputCode.val() || inputCode.val().trim() === '') { // 인증번호 입력 없이 확인하기를 눌렀을 경우 알림
+            alert("인증번호를 입력해주세요.");
+            return;
+        }
+
+        $.ajax({
+            url: "/infoCheck/verifyCode",
+            type: "POST",
+            data: {
+                "inputCode": inputCode.val(),
+            },
+            success: function(isCodeCorrect) {
+                if (isCodeCorrect) {
+                    alert("인증번호가 일치합니다.");
+                    EmailAuthCheck = true;
+                    inputCode.prop('readonly', true);
+                    $('#inputCodeConfirm').html('<i class="bi bi-check-circle-fill"></i>').css('color', 'green')
+                    inputCode.css('border-color','green');
+                    email_btn.attr("disabled", true);
+                } else {
+                    alert("인증번호가 일치하지 않습니다.");
+                    $('#inputCodeConfirm').html('<i class="bi bi-x-circle-fill"></i>').css('color', 'red')
+                    inputCode.css('border-color','red');
+                    inputCode.focus();
+                }
+            },
+            error: function() {
+                alert("인증번호 확인에 실패했습니다.");
+            }
+        });
+    }
+
+    // submit 버튼 눌렀을 때 input 태그 빈칸 검사
+    function checkField(){
+        // 빈칸 검사
+        let inputs = document.email_change_form;
+
+        try{
+            if(!inputs.newEmail.value){	//
+                alert("새로운 이메일을 입력하세요.");
+                $('#newEmail').css('border-color','red');
+                return false;	// 이동 금지.
+            }
+            if (!newEmailCheckRegex){
+                alert('이메일 형식 조건을 확인 해주세요.');
+                return false;
+            }
+            if (!EmailDuplicationCheck){
+                alert('이메일 중복확인을 해주세요.');
+                return false;
+            }
+            if (!EmailSend){
+                alert('이메일 인증번호를 전송 해주세요.');
+                return false;
+            }
+            if (!EmailAuthCheck){
+                alert('이메일 인증번호를 확인 해주세요.');
+                return false;
+            }
+            return true;
+        }
+        catch (error){
+            alert(error);
+            return false;
+        }
+    }
+</script>
+</body>
+</html>
