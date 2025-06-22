@@ -11,8 +11,8 @@
 | --- | --- |
 | MusicGen | 음악 생성 |
 | Stable Diffusion | 이미지 생성 |
-| Whisper SER | 음성 기반 감정 인식 |
-| Deepface | 표정 기반 감정 인식 |
+| Whisper SER | 음성 기반 감정 분석 |
+| Deepface | 표정 기반 감정 분석 |
 
 <br><p>2. 데이터베이스</p>
 
