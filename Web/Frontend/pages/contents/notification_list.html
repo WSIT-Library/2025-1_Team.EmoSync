@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">콘텐츠 생성 알림</span></h1>
+        </div>
+        <div class="row gx-2 justify-content-center">
+            <div class="col-lg-11 col-xl-10 col-xxl-9">
+                <!-- Skills Section-->
+                <section>
+                    <!-- Skillset Card-->
+                    <div class="card shadow border-0 rounded-4 mb-5">
+                        <div class="card-body">
+                            <ul class="board-list-title">
+                                <li class="txt-14">번호</li>
+                                <li class="txt-14">성공여부</li>
+                                <li class="board-title-con txt-14">실패원인</li>
+                                <li class="txt-14">요청자</li>
+                                <li class="txt-14">요청일</li>
+                                <li class="txt-14 count">결과확인</li>
+                                <li class="txt-14">삭제</li>
+                            </ul>
+                            <ul class="board-list no_dot" th:if="${notifications.totalPages} > 0">
+                                <li th:each="notification : ${notifications}">
+                                    <ul class="board-list-inner">
+                                        <li class="board-num">
+                                            <span class="tag-square red" th:text="${notification.id}">번호</span>
+                                        </li>
+                                        <li>
+                                            <th:block th:if="${notification.is_success == '성공'}">
+                                                <span class="tag_blue" th:text="${notification.is_success}">성공</span>
+                                            </th:block>
+                                            <th:block th:if="${notification.is_success == '실패'}">
+                                                <span class="tag" th:text="${notification.is_success}">실패</span>
+                                            </th:block>
+                                            <th:block th:if="${notification.is_success == '생성 중'}">
+                                                <span class="tag_green" th:text="${notification.is_success}">생성 중</span>
+                                            </th:block>
+                                        </li>
+                                        <li class="board-title-con txt-l">
+                                            <p class="li_item" th:if="${notification.failure_msg != 'x'}" th:text="${notification.failure_msg}">실패원인</p>
+                                        </li>
+                                        <li>
+                                            <p class="li_item"><i class="bi bi-pencil-fill"></i>[[${notification.receiver_id}]]</p>
+                                        </li>
+                                        <li>
+                                            <p class="date"
+                                               th:if="${#dates.format(#calendars.createNow(), 'yyyy-MM-dd')} == ${#temporals.format(notification.request_date, 'yyyy-MM-dd')}"
+                                               th:text="${#temporals.format(notification.request_date, 'HH:mm')}">시간</p>
+
+                                            <p class="date"
+                                               th:unless="${#dates.format(#calendars.createNow(), 'yyyy-MM-dd')} == ${#temporals.format(notification.request_date, 'yyyy-MM-dd')}"
+                                               th:text="${#temporals.format(notification.request_date, 'MM-dd')}">날짜</p>
+                                        </li>
+                                        <li>
+                                            <th:block th:if="${notification.related_url == 'none'}">
+                                                <button type="button" class="btn btn-primary btn-sm" onclick="onAlert()">확인</button>
+                                            </th:block>
+                                            <th:block th:if="${notification.related_url != 'none'}">
+                                                <a class="a_tag_style" th:href="@{{url}(url=${notification.related_url})}"><button type="button" class="btn btn-primary btn-sm">확인</button></a>
+                                            </th:block>
+                                        </li>
+                                        <li>
+                                            <p class="li_item">
+                                                <th:block th:if="${notification.related_url == 'none'}">
+                                                    <span><button type="button" class="btn btn-danger btn-sm" onclick="onAlert()"><i class="bi bi-trash-fill"></i></button></span>
+                                                </th:block>
+                                                <th:block th:if="${notification.related_url != 'none'}">
+                                                    <span><button type="button" class="btn btn-danger btn-sm" th:onclick="'onDelete(' + ${notification.id} + ')'"><i class="bi bi-trash-fill"></i></button></span>
+                                                </th:block>
+                                            </p>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <div th:if="${notifications.totalPages} == 0" class="text-center">알림이 없습니다.</div>
+                            <hr>
+
+                            <br>
+                            <th:block th:with="start=${T(java.lang.Math).floor(notifications.number/10)*10 + 1},
+                        last=(${start + 9 < notifications.totalPages ? start + 9 : (notifications.totalPages > 0 ? notifications.totalPages : 1)}),
+                        firstAddr=@{/pages/contents/notification_list(page=1)},
+                        prevAddr=@{/pages/contents/notification_list(page=${notifications.number})},
+                        nextAddr=@{/pages/contents/notification_list(page=${notifications.number + 2})},
+                        lastAddr=@{/pages/contents/notification_list(page=${notifications.totalPages})}">
+                                <!-- pagination fragment -->
+                                <div>
+                                    <ul class="pc_pagination pagination">
+                                        <!--맨 처음 페이지로 이동 -->
+                                        <li class="page-item pc_pagination_btn">
+                                            <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                                <span aria-hidden="true"><<</span>
+                                            </a>
+                                        </li>
+                                        <!-- 이전 페이지로 가기 버튼 -->
+                                        <li class="page-item" th:class="${notifications.first} ? 'disabled'">
+                                            <a class="page-link" th:href="${notifications.first} ? '#' :${prevAddr}"
+                                               aria-label="Previous">
+                                                <span aria-hidden="true"><</span>
+                                            </a>
+                                        </li>
+                                        <!--1,2,3,4,.. 등 페이지-->
+                                        <li class="page-item" th:each="page: ${#numbers.sequence(start, last)}"
+                                            th:class="${page == notifications.number + 1} ? 'active'">
+                                            <a class="page-link" th:text="${page}" th:href="@{/pages/contents/notification_list(page=${page})}"></a>
+                                        </li>
+                                        <!--다음 페이지로 -->
+                                        <li class="page-item" th:class="${notifications.last} ? 'disabled'">
+                                            <a class="page-link" th:href="${notifications.last} ? '#' : ${nextAddr}"
+                                               aria-label="Next">
+                                                <span aria-hidden="true">></span>
+                                            </a>
+                                        </li>
+                                        <!--맨 마지막 페이지로 이동 -->
+                                        <li class="page-item pc_pagination_btn">
+                                            <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                                <span aria-hidden="true">>></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!--모바일용-->
+                                <div>
+                                    <ul class="pagination mobile_pagination mobile_pagination_btn parent_height_set">
+                                        <!--맨 처음 페이지로 이동 -->
+                                        <li class="page-item mobile_first_btn">
+                                            <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                                <span aria-hidden="true"><<</span>
+                                            </a>
+                                        </li>
+                                        <!--맨 마지막 페이지로 이동 -->
+                                        <li class="page-item mobile_last_btn">
+                                            <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                                <span aria-hidden="true">>></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <!-- pagination fragment -->
+                            </th:block>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+    // 알림 삭제
+    function onDelete(notification_id){
+        if (window.confirm('해당 알림을 삭제하시겠습니까?'))
+        {
+            //삭제 REST API 호출
+            const url = `/pages/contents/notification_delete/`+notification_id;
+
+            fetch(url, {
+                method: "DELETE"
+            }).then(response=>response.text())
+                .then((text)=>{
+                    if(text !== "Success"){
+                        alert(text);
+                        return;
+                    }
+
+                    //삭제 성공시 메시지 창 띄우기
+                    const msg = `알림이 삭제되었습니다.`;
+                    alert(msg);
+                    window.location.reload();
+                })
+        }
+        else {}
+    }
+
+    function onAlert(){
+        alert("아직 생성 중 입니다.");
+    }
+</script>
+</body>
+</html>

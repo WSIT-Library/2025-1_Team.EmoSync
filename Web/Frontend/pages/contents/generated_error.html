@@ -1,0 +1,22 @@
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>오류</title>
+</head>
+<body>
+<input type="hidden" id="error_message" th:value="${error_message}">
+<script  src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+    const error_msg = $("#error_message").val();
+    if (window.confirm('[' + error_msg + ']' + '\n확인을 누르면 이전 페이지로 이동합니다.'))
+    {
+        window.history.back();
+    }
+    else
+    {
+        window.location.href = "/pages/index"
+    }
+</script>
+</body>
+</html>

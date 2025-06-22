@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+    <!-- 화면 캡쳐 CDN -->
+    <script src="/js/html2canvas.min.js"></script>
+    <style>
+        /* 모바일 (599px 이하 - 스마트폰) */
+        @media (max-width: 599px) {
+            #user_image {
+                max-width: 100%;
+                height: auto;
+            }
+        }
+
+        /* 태블릿 (600px ~ 1024px) */
+        @media (min-width: 600px) and (max-width: 1024px) {
+            #user_image {
+                max-width: 90%;
+                height: auto;
+            }
+        }
+
+        /* 데스크탑 (1025px 이상) */
+        @media (min-width: 1025px) {
+            #user_image {
+                max-width: 90%;
+                height: auto;
+            }
+        }
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <input type="hidden" id="userId" th:value="${userId}">
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">콘텐츠 생성 결과</span></h1>
+        </div>
+        <div class="alert alert-primary alert-dismissible fade show d-flex flex-wrap align-items-center" role="alert">
+            <span class="me-2">일일 콘텐츠 생성 가능 횟수: [[${remainingAttempts}]]회</span>
+            <a class="upgrade-btn me-auto mt-2 mt-sm-0" href="/pages/plan/payment">업그레이드</a>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div class="row gx-2 justify-content-center">
+            <div class="col-lg-11 col-xl-10 col-xxl-9">
+                <section>
+                    <div class="row gx-2 justify-content-center">
+                        <div class="col-12 col-md-10 col-lg-8 mb-5">
+                            <section>
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <h3 class="text-primary fw-bolder mb-0">감정 분석 결과</h3>
+                                </div>
+
+                                <div class="card shadow border-0 rounded-4 mb-5">
+                                    <div class="card-body p-3">
+                                        <div class="row align-items-center gx-5">
+                                            <div class="col-12 col-lg text-center text-lg-start mb-4 mb-lg-0">
+                                                <div class="p-2 rounded-4 d-flex flex-column flex-sm-row align-items-center" style="min-height: 100px;">
+                                                    <div>
+                                                        <img id="user_image" th:src="${FileRoot + contents.getUserImgPath() + contents.getUserImgName()}" alt="user_image" style="margin-bottom: 10px; margin-right: 0;" class="me-sm-3 mb-sm-0" />
+                                                        <audio th:src="@{${FileRoot + contents.getUserVoicePath() + contents.getUserVoiceName()}}" controls id="user_audio"></audio>
+                                                    </div>
+                                                    <div class="text-center" style="width: 100%;">
+                                                        <!-- 분석한 감정 카드 -->
+                                                        <div class="mb-3">
+                                                            <div class="card">
+                                                                <div class="card-header text-primary fw-bold">
+                                                                    감정 결과
+                                                                    <i class="bi bi-question-circle-fill" data-bs-toggle="modal" data-bs-target="#modalEmotionTable"></i>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <p class="card-text fs-6" th:text="${contents.getEmotion()}"></p>
+                                                                    <p class="card-text fs-6" th:text="${contents.getEmotionDetail()}"></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- 감정 타입 카드 -->
+                                                        <div>
+                                                            <div class="card">
+                                                                <div class="card-header text-primary fw-bold">
+                                                                    감정 타입
+                                                                    <i class="bi bi-question-circle-fill" data-bs-toggle="modal" data-bs-target="#modalEmotionTypeTable"></i>
+                                                                </div>
+                                                                <div class="card-body">
+                                                                    <p class="card-text fs-6" th:text="${contents.getEmotionType()}"></p>
+                                                                    <p class="card-text fs-6" th:text="${contents.getEmotionTypeDetail()}"></p>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                        </div>
+                    </div>
+
+                    <div class="mb-5">
+                        <!-- image Section-->
+                        <section>
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h3 class="text-primary fw-bolder mb-0">생성된 이미지</h3>
+                            </div>
+                            <!-- Experience Card 1-->
+                            <div class="card shadow border-0 rounded-4 mb-5">
+                                <div class="card-body">
+                                    <div style="width: 100%" class="d-flex justify-content-center align-items-center mb-3">
+                                        <div class="border p-3 col-12 col-sm-10 col-md-8 col-lg-8">
+                                            <img th:src="@{${FileRoot + contents.generatedImgPath + contents.generatedImg}}" alt="" style="max-width: 100%; height: auto;"/>
+                                        </div>
+                                    </div>
+
+                                    <!-- 로딩 스피너 영역 -->
+                                    <div class="d-flex justify-content-center mt-1 mb-1" id="loadingSpinner_image"></div>
+
+                                    <div class="text-center mb-5">
+                                        <a class="btn btn-primary m-1" th:href="@{'/pages/contents/download?filePath=' +${contents.generatedImgPath + contents.generatedImg}}" download>
+                                            <div class="d-inline-block bi bi-download me-2"></div>
+                                            다운로드
+                                        </a>
+                                        <button class="btn btn-dark" th:onclick="'re_image(' + ${contents.id} + ')'" >이미지 다시 생성</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- music Section-->
+                        <section>
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <h3 class="text-primary fw-bolder mb-0">생성된 음악</h3>
+                            </div>
+                            <!-- Experience Card 1-->
+                            <div class="card shadow border-0 rounded-4 mb-5">
+                                <div class="card-body">
+                                    <div style="width: 100%" class="d-flex justify-content-center align-items-center mb-3">
+                                        <audio th:src="@{${FileRoot + contents.generatedMusicPath + contents.generatedMusic}}" controls id="myAudio"></audio>
+                                    </div>
+
+                                    <!-- 로딩 스피너 영역 -->
+                                    <div class="d-flex justify-content-center mt-1 mb-1" id="loadingSpinner_music"></div>
+
+                                    <div class="text-center mb-5">
+                                        <a class="btn btn-primary m-1" th:href="@{'/pages/contents/download?filePath=' +${contents.generatedMusicPath + contents.generatedMusic}}" download>
+                                            <div class="d-inline-block bi bi-download me-2"></div>
+                                            다운로드
+                                        </a>
+                                        <button class="btn btn-dark" th:onclick="'re_music(' + ${contents.id} + ')'" >음악 다시 생성</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+
+                        <!-- 다시 생성, 다운로드 버튼 -->
+                        <div class="text-center mb-3">
+                            <button class="btn btn-dark" th:onclick="'re_all(' + ${contents.id} + ')'" >콘텐츠 재생성</button>
+                            <button class="btn btn-dark" th:onclick="'re_user_input(' + ${contents.id} + ')'">사진/음성 재입력</button>
+                        </div>
+                        <!-- 로딩 스피너 영역 -->
+                        <div class="d-flex justify-content-center" id="loadingSpinner_all"></div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- 모달 (분석한 감정표) -->
+<div class="modal fade" id="modalEmotionTable" tabindex="-1" aria-labelledby="modalEmotionTableLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEmotionTableLabel">감정표</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalEmotionTable_body">
+                <table class="modal-table mb-5">
+                    <caption><strong>복합 감정 테이블</strong></caption>
+                    <thead>
+                    <tr>
+                        <th>이름</th>
+                        <th>설명</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr><td>excited</td><td>기쁨과 놀람이 섞여서 '흥분'된 상태</td></tr>
+                    <tr><td>content</td><td>행복하고 중립적인 상태에서 '만족'한 상태</td></tr>
+                    <tr><td>curious</td><td>놀람과 중립적인 상태에서 '호기심'을 느끼는 상태</td></tr>
+                    <tr><td>amused</td><td>웃긴 상황에서 '재미있어 하는' 상태</td></tr>
+                    <tr><td>anxious</td><td>두려움과 슬픔이 결합된 '불안'한 상태</td></tr>
+                    <tr><td>nervous</td><td>두려움과 놀람이 결합된 '긴장'한 상태</td></tr>
+                    <tr><td>frustrated</td><td>화남과 슬픔이 결합된 '좌절'된 상태</td></tr>
+                    <tr><td>irritated</td><td>화가 나고 중립적인 상태에서 '짜증'나는 상태</td></tr>
+                    <tr><td>melancholy</td><td>슬픔과 중립적인 상태에서 '우울'한 상태</td></tr>
+                    <tr><td>tired</td><td>슬픔과 중립적인 상태에서 '피곤'한 상태</td></tr>
+                    <tr><td>bored</td><td>감정이 거의 없고 지루한 상태</td></tr>
+                    <tr><td>shocked</td><td>놀람과 두려움이 결합된 '충격'받은 상태</td></tr>
+                    <tr><td>confused</td><td>놀람과 두려움, 중립적인 상태에서 '혼란'스러운 상태</td></tr>
+                    <tr><td>affectionate</td><td>행복과 중립적인 상태에서 '애정'을 느끼는 상태</td></tr>
+                    <tr><td>serious</td><td>중립적인 상태에서 화나거나 슬픈 감정이 있는 '진지'한 상태</td></tr>
+                    <tr><td>determined</td><td>화남과 중립적인 상태에서 '결단'을 내린 상태</td></tr>
+                    </tbody>
+                </table>
+
+                <table class="modal-table">
+                    <caption><strong>단일 감정 테이블</strong></caption>
+                    <thead>
+                    <tr>
+                        <th>강도</th>
+                        <th>이름</th>
+                        <th>설명</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr><td rowspan="7">low</td><td><strong>happy</strong></td><td>행복하지만 비교적 낮은 강도의 기쁨</td></tr>
+                    <tr><td>neutral</td><td>중립적이고 비교적 낮은 감정</td></tr>
+                    <tr><td>surprise</td><td>놀람이 비교적 낮은 강도의 놀람</td></tr>
+                    <tr><td>disgusted</td><td>혐오감이 비교적 낮은 상태</td></tr>
+                    <tr><td>sad</td><td>슬픔이 비교적 낮은 강도의 슬픔</td></tr>
+                    <tr><td>angry</td><td>화남이 비교적 낮은 강도의 화남</td></tr>
+                    <tr><td>fear</td><td>두려움이 비교적 낮은 강도의 두려움</td></tr>
+
+                    <tr><td rowspan="7">middle</td><td><strong>happy</strong></td><td>중간 정도의 행복</td></tr>
+                    <tr><td>neutral</td><td>중간 정도의 중립</td></tr>
+                    <tr><td>surprise</td><td>중간 정도의 놀람</td></tr>
+                    <tr><td>disgusted</td><td>중간 정도의 혐오감</td></tr>
+                    <tr><td>sad</td><td>중간 정도의 슬픔</td></tr>
+                    <tr><td>angry</td><td>중간 정도의 화남</td></tr>
+                    <tr><td>fear</td><td>중간 정도의 두려움</td></tr>
+
+                    <tr><td rowspan="7">high</td><td><strong>happy</strong></td><td>매우 강한 행복</td></tr>
+                    <tr><td>neutral</td><td>매우 강한 중립</td></tr>
+                    <tr><td>surprise</td><td>매우 강한 놀람</td></tr>
+                    <tr><td>disgusted</td><td>매우 강한 혐오감</td></tr>
+                    <tr><td>sad</td><td>매우 강한 슬픔</td></tr>
+                    <tr><td>angry</td><td>매우 강한 화남</td></tr>
+                    <tr><td>fear</td><td>매우 강한 두려움</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 모달 (감정 타입) -->
+<div class="modal fade" id="modalEmotionTypeTable" tabindex="-1" aria-labelledby="modalEmotionTypeTableLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEmotionTypeTableLabel">감정 타입표</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalEmotionTypeTable_body">
+                <table class="modal-table">
+                    <thead>
+                    <tr>
+                        <th>감정 타입</th>
+                        <th>설명</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>positive</td><td>긍정적인 감정</td></tr>
+                        <tr><td>negative</td><td>부정적인 감정</td></tr>
+                        <tr><td>neutral</td><td>중립적인 감정</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script th:inline="javascript">
+    // 콘텐츠 생성을 요청한 유저의 ID 첨부
+    let userId = $('#userId').val();
+
+    function re_image(contents_id){
+        // 서버로 전송할 formData. 이곳에 이미지와 음성 파일이 append 됨
+        const formData_image = new FormData();
+        if (window.confirm('이미지를 재생성 하시겠습니까?\n사용자의 얼굴 사진과 음성, 생성된 음악은 유지됩니다.'))
+        {
+            /*<![CDATA[*/
+            // 일일 콘텐츠 생성 가능 횟수
+            let remainingAttempts = /*[[${remainingAttempts}]]*/;
+            if(remainingAttempts < 1){
+                alert("일일 콘텐츠 생성 가능 횟수가 모두 소진되었습니다.\n플랜을 업그레이드 하거나 다음날 이용해주세요.");
+                return;
+            }
+            /*]]>*/
+
+            const spinner = document.getElementById("loadingSpinner_image");
+
+            spinner.innerHTML = "<div class=\"spinner-border\" role=\"status\">\n" +
+                "                                    <span class=\"visually-hidden\">Loading...</span>\n" +
+                "                                </div>\n" +
+                "                                <span class=\"ms-2\">\n" +
+                "    이미지 재생성 중...<br>\n" +
+                "</span>";
+            //window.location.href = "/re_contents_generate/" + contents_id + "/image"
+
+            formData_image.append('userId', userId);
+            formData_image.append('contents_id', contents_id);
+            formData_image.append('generate_opt', 'image');
+
+            // POST 요청을 통해 서버로 전송
+            fetch('/re_contents_generate', {
+                method: 'POST',
+                body: formData_image
+            })
+                .then(response => {
+                    // 서버에서 "업로드가 시작되었습니다." 메시지를 받은 경우 처리
+                    if (response.ok) {
+                        return response.text(); // 응답을 텍스트로 처리
+                    } else {
+                        throw new Error("생성 요청에 실패했습니다.");
+                    }
+                })
+                .then(message => {
+                    // 서버에서 받은 메시지를 alert 로 표시
+                    alert(message); // "업로드가 시작되었습니다. 상태를 확인해 주세요." 메시지가 alert로 표시됩니다.
+                })
+                .catch(error => {
+                    // 오류 발생 시 alert 로 표시
+                    console.error('Error :', error);
+                    alert('생성 요청 오류가 발생했습니다. 다시 시도해 주세요.');
+                });
+        }
+        else {}
+    }
+
+    function re_music(contents_id){
+        // 서버로 전송할 formData. 이곳에 이미지와 음성 파일이 append 됨
+        const formData_music = new FormData();
+        if (window.confirm('음악을 재생성 하시겠습니까?\n사용자의 얼굴 사진과 음성, 생성된 이미지는 유지됩니다.'))
+        {
+            /*<![CDATA[*/
+            // 일일 콘텐츠 생성 가능 횟수
+            let remainingAttempts = /*[[${remainingAttempts}]]*/;
+            if(remainingAttempts < 1){
+                alert("일일 콘텐츠 생성 가능 횟수가 모두 소진되었습니다.\n플랜을 업그레이드 하거나 다음날 이용해주세요.");
+                return;
+            }
+            /*]]>*/
+
+            const spinner = document.getElementById("loadingSpinner_music");
+
+            spinner.innerHTML = "<div class=\"spinner-border\" role=\"status\">\n" +
+                "                                    <span class=\"visually-hidden\">Loading...</span>\n" +
+                "                                </div>\n" +
+                "                                <span class=\"ms-2\">\n" +
+                "    음악 재생성 중...<br>\n" +
+                "</span>";
+            //window.location.href = "/re_contents_generate/" + contents_id + "/music"
+            formData_music.append('userId', userId);
+            formData_music.append('contents_id', contents_id);
+            formData_music.append('generate_opt', 'music');
+
+            // POST 요청을 통해 서버로 전송
+            fetch('/re_contents_generate', {
+                method: 'POST',
+                body: formData_music
+            })
+                .then(response => {
+                    // 서버에서 "업로드가 시작되었습니다." 메시지를 받은 경우 처리
+                    if (response.ok) {
+                        return response.text(); // 응답을 텍스트로 처리
+                    } else {
+                        throw new Error("생성 요청에 실패했습니다.");
+                    }
+                })
+                .then(message => {
+                    // 서버에서 받은 메시지를 alert 로 표시
+                    alert(message); // "업로드가 시작되었습니다. 상태를 확인해 주세요." 메시지가 alert로 표시됩니다.
+                })
+                .catch(error => {
+                    // 오류 발생 시 alert 로 표시
+                    console.error('Error :', error);
+                    alert('생성 요청 오류가 발생했습니다. 다시 시도해 주세요.');
+                });
+        }
+        else {}
+    }
+
+    function re_all(contents_id){
+        // 서버로 전송할 formData. 이곳에 이미지와 음성 파일이 append 됨
+        const formData_all = new FormData();
+        if (window.confirm('이미지, 음악을 재생성 하시겠습니까?\n사용자의 얼굴 사진과 음성은 유지됩니다.'))
+        {
+            /*<![CDATA[*/
+            // 일일 콘텐츠 생성 가능 횟수
+            let remainingAttempts = /*[[${remainingAttempts}]]*/;
+            if(remainingAttempts < 1){
+                alert("일일 콘텐츠 생성 가능 횟수가 모두 소진되었습니다.\n플랜을 업그레이드 하거나 다음날 이용해주세요.");
+                return;
+            }
+            /*]]>*/
+
+            const spinner = document.getElementById("loadingSpinner_all");
+
+            spinner.innerHTML = "<div class=\"spinner-border\" role=\"status\">\n" +
+                "                                    <span class=\"visually-hidden\">Loading...</span>\n" +
+                "                                </div>\n" +
+                "                                <span class=\"ms-2\">\n" +
+                "    콘텐츠 재생성 중...<br>\n" +
+                "</span>";
+            //window.location.href = "/re_contents_generate/" + contents_id + "/all"
+            formData_all.append('userId', userId);
+            formData_all.append('contents_id', contents_id);
+            formData_all.append('generate_opt', 'all');
+
+            // POST 요청을 통해 서버로 전송
+            fetch('/re_contents_generate', {
+                method: 'POST',
+                body: formData_all
+            })
+                .then(response => {
+                    // 서버에서 "업로드가 시작되었습니다." 메시지를 받은 경우 처리
+                    if (response.ok) {
+                        return response.text(); // 응답을 텍스트로 처리
+                    } else {
+                        throw new Error("생성 요청에 실패했습니다.");
+                    }
+                })
+                .then(message => {
+                    // 서버에서 받은 메시지를 alert 로 표시
+                    alert(message); // "업로드가 시작되었습니다. 상태를 확인해 주세요." 메시지가 alert로 표시됩니다.
+                })
+                .catch(error => {
+                    // 오류 발생 시 alert 로 표시
+                    console.error('Error :', error);
+                    alert('생성 요청 오류가 발생했습니다. 다시 시도해 주세요.');
+                });
+        }
+        else {}
+    }
+
+    function re_user_input(contents_id){
+        if (window.confirm('얼굴 사진과 음성 녹음을 다시 입력하시겠습니까?\n사용자의 얼굴 사진과 음성, 생성된 이미지와 음악 모두 삭제됩니다.'))
+        {
+            /*<![CDATA[*/
+            // 일일 콘텐츠 생성 가능 횟수
+            let remainingAttempts = /*[[${remainingAttempts}]]*/;
+            if(remainingAttempts < 1){
+                alert("일일 콘텐츠 생성 가능 횟수가 모두 소진되었습니다.\n플랜을 업그레이드 하거나 다음날 이용해주세요.");
+                return;
+            }
+            /*]]>*/
+
+            let formData = new FormData();
+            formData.append('contents_id', contents_id);
+            // POST 요청을 통해 서버로 전송
+            fetch('/pages/contents/re_user_photo', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    // 서버에서 리다이렉션 처리 후 3xx 응답이 오면
+                    if (response.redirected) {
+                        window.location.href = response.url;  // 리다이렉트된 URL 로 페이지 이동
+                    } else {
+                        return response.json();
+                    }
+                })
+                .then(data => {
+                    console.log('Upload successful:', data);
+                })
+                .catch(error => {
+                    console.error('Error uploading image:', error);
+                });
+        }
+        else {}
+    }
+
+    const audio = document.getElementById('myAudio');
+
+    // autoplay 는 muted 상태에서는 대체로 가능
+    audio.play().then(() => {
+        // 짧은 지연 후 소리 켜기 (사용자 눈치 못 채게)
+        setTimeout(() => {
+            audio.muted = false;
+            audio.volume = 0.5; // 소리 너무 크지 않게 조절
+        }, 1000);
+    }).catch(err => {
+        console.log("자동재생 실패:", err);
+    });
+</script>
+</body>
+</html>

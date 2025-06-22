@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+    <!-- 화면 캡쳐 CDN -->
+    <script src="/js/html2canvas.min.js"></script>
+    <!-- 미디어 쿼리 추가 -->
+    <style>
+        @media (max-width: 576px) {
+            .card {
+                height: auto; /* 모바일에서 카드 높이를 자동으로 맞추기 */
+            }
+        }
+
+        .date-range {
+            font-size: 16px;  /* 기본 폰트 크기 */
+        }
+
+        @media screen and (max-width: 600px) {
+            .date-range {
+                font-size: 14px;  /* 모바일에서 작은 폰트 크기 */
+                word-wrap: break-word;
+            }
+        }
+
+        .DetailInfo {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: #fff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        .DetailInfo th,
+        .DetailInfo td {
+            padding: 12px 16px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .DetailInfo thead {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .DetailInfo tbody tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .DetailInfo td:first-child {
+            font-weight: bold;
+            color: #333;
+        }
+
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bolder mb-0"><span class="d-inline">저장된 콘텐츠</span></h1>
+
+            <!-- 기간 조회 버튼들 -->
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <th:block th:if="${search_opt} == 'default'">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='/pages/contents/contents_list';">최근 내역(1주일)</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#specificPeriodModal">특정 기간 조회</button>
+                </th:block>
+                <th:block th:if="${search_opt} == 'oneself'">
+                    <button type="button" class="btn btn-outline-primary" onclick="window.location.href='/pages/contents/contents_list';">최근 내역(1주일)</button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#specificPeriodModal">특정 기간 조회</button>
+                </th:block>
+            </div>
+
+            <!-- 날짜 범위 출력 부분 -->
+            <div class="mt-2 text-center" th:if="${startDate != null and endDate != null}">
+                <span class="date-range" th:text="'조회 기간: ' + ${#temporals.format(startDate, 'yyyy/MM/dd · HH:mm')} + ' ~ ' + ${#temporals.format(endDate, 'yyyy/MM/dd · HH:mm')}"></span>
+            </div>
+
+        </div>
+        <div class="px-4 row gx-5 justify-content-center">
+            <div class="col-lg-11 col-xl-9 col-xxl-8 p-0">
+                <th:block th:if="${contentsList.totalPages} > 0">
+                    <!-- Contents Section-->
+                    <section th:each="contents : ${contentsList}">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                            <h2 class="text-primary fw-bolder mb-0"
+                                th:if="${#dates.format(#calendars.createNow(), 'yyyy-MM-dd')} == ${#temporals.format(contents.getGeneratedDate(), 'yyyy-MM-dd')}"
+                                th:text="${#temporals.format(contents.getGeneratedDate(), 'HH:mm')}">날짜</h2>
+
+                            <h2 class="text-primary fw-bolder mb-0"
+                                th:unless="${#dates.format(#calendars.createNow(), 'yyyy-MM-dd')} == ${#temporals.format(contents.getGeneratedDate(), 'yyyy-MM-dd')}"
+                                th:text="${#temporals.format(contents.getGeneratedDate(), 'MM-dd')}">날짜</h2>
+                        </div>
+                        <!-- Contents Card -->
+                        <div class="card shadow border-0 rounded-4 mb-5 p-3">
+                            <!-- 자세히보기, 다운로드 , 삭제 버튼 -->
+                            <div class="d-flex justify-content-end">
+                                <button class="btn btn-dark m-1 DetailInfo-btn" data-bs-toggle="modal" data-bs-target="#modalDetailInfo"
+                                        th:attr="data-bs-id=${contents.id},
+                                        data-generated-date=${#temporals.format(contents.getGeneratedDate(), 'yyyy년 MM월 dd일 · HH:mm:ss')},
+                                        data-emotion=${contents.emotion},
+                                        data-emotionType=${contents.emotionType},
+                                        data-emotionDetail=${contents.emotionDetail},
+                                        data-emotionTypeDetail=${contents.emotionTypeDetail}">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                                <a class="btn btn-primary m-1" th:href="${'/pages/contents/download?filePath=' + contents.generatedImgPath + contents.generatedImg}" download>
+                                    <div class="d-inline-block bi bi-download"></div>
+                                    <i class="bi bi-file-earmark-image"></i>
+                                </a>
+                                <a class="btn btn-primary m-1" th:href="${'/pages/contents/download?filePath=' + contents.generatedMusicPath + contents.generatedMusic}" download>
+                                    <div class="d-inline-block bi bi-download"></div>
+                                    <i class="bi bi-file-earmark-music"></i>
+                                </a>
+                                <button class="btn btn-danger m-1" th:onclick="'onDelete(' + ${contents.id} + ')'"><i class="bi bi-trash-fill"></i></button>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex flex-column flex-sm-row justify-content-center align-items-center gx-5 gap-3">
+                                    <!-- 첫 번째 카드 (이미지 1) -->
+                                    <div class="card" style="width: 100%; max-width: 18rem; height: 300px; margin-bottom: 15px; overflow: hidden">
+                                        <div class="card-header text-center">
+                                            사용자 입력값
+                                        </div>
+                                        <div class="card-body d-flex justify-content-center align-items-center p-0">
+                                            <div>
+                                                <img th:src="${FileRoot + contents.getUserImgPath() + contents.getUserImgName()}" class="card-img-top" alt=""
+                                                     data-bs-toggle="modal" data-bs-target="#imageModal"  style="width: 100%; height: auto; object-fit: contain;">
+                                                <audio th:src="@{${FileRoot + contents.getUserVoicePath() + contents.getUserVoiceName()}}" controls id="user_audio"
+                                                       style="width: 100%; height: 50px; max-height: 100px; object-fit: contain;">
+                                                </audio>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- 두 번째 카드 (이미지 2) -->
+                                    <div class="card" style="width: 100%; max-width: 18rem; height: 300px; margin-bottom: 15px; overflow: hidden">
+                                        <div class="card-header text-center">
+                                            생성된 이미지
+                                        </div>
+                                        <div class="card-body d-flex justify-content-center align-items-center p-0">
+                                            <img th:src="${FileRoot + contents.generatedImgPath + contents.generatedImg}" class="card-img-top" alt=""
+                                                 data-bs-toggle="modal" data-bs-target="#imageModal" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                                        </div>
+                                    </div>
+
+                                    <!-- 세 번째 카드 (오디오) -->
+                                    <div class="card" style="width: 100%; max-width: 18rem; height: 300px; margin-bottom: 15px;">
+                                        <div class="card-header text-center">
+                                            생성된 음악
+                                        </div>
+                                        <div class="card-body d-flex justify-content-center align-items-center">
+                                            <audio th:src="${FileRoot + contents.generatedMusicPath + contents.generatedMusic}" controls id="myAudio" style="width: 100%; max-height: 100%;"></audio>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    </section>
+                </th:block>
+
+                <!-- 저장된 콘텐츠가 없는 경우 -->
+                <th:block th:unless="${contentsList.totalPages} > 0">
+                    <div class="m-5 text-center">저장된 콘텐츠가 없습니다</div>
+                </th:block>
+
+                <!-- 모달 (이미지 확대) -->
+                <div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="imageModalLabel">이미지 확대</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- 동적으로 변경될 이미지 -->
+                                <img id="modalImage" class="img-fluid" alt="확대된 이미지">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 모달 (상세 정보) -->
+                <div class="modal fade" id="modalDetailInfo" tabindex="-1" aria-labelledby="modalDetailInfoLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="modalDetailInfoLabel">상세정보</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body" id="modalDetailInfo_body">
+
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 특정 기간 조회 모달 -->
+                <div class="modal fade" id="specificPeriodModal" tabindex="-1" aria-labelledby="specificPeriodModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="specificPeriodModalLabel">특정 기간 조회</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <!-- 기간을 선택할 수 있는 폼 -->
+                                <form name="contents_Date_form" action="/pages/contents/contents_list" method="get" onsubmit="return checkField()">
+                                    <!-- 버튼 그룹을 감싸는 div에 d-flex와 justify-content-center 추가 -->
+                                    <div class="btn-group mb-3 d-flex justify-content-center" role="group" aria-label="Date Range Selection">
+                                        <button type="button" class="btn btn-outline-primary" onclick="setDateRange(1)">1개월 전</button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="setDateRange(3)">3개월 전</button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="setDateRange(6)">6개월 전</button>
+                                        <button type="button" class="btn btn-outline-primary" onclick="setDateRange(12)">12개월 전</button>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="startDate" class="form-label">시작 날짜</label>
+                                        <input type="datetime-local" class="form-control" name="startDate" id="startDate">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="endDate" class="form-label">끝 날짜</label>
+                                        <input type="datetime-local" class="form-control" name="endDate" id="endDate">
+                                    </div>
+                                    <hr>
+                                    <div class="text-center">
+                                        <button type="submit" class="btn btn-primary">조회</button>
+                                    </div>
+                                </form>
+
+                                <script>
+                                    function setDateRange(monthsAgo) {
+                                        const today = new Date();
+
+                                        // 현재 날짜를 기준으로 'monthsAgo' 개월 전 날짜 계산
+                                        today.setMonth(today.getMonth() - monthsAgo);
+
+                                        // 시작 날짜는 'monthsAgo' 개월 전, 끝 날짜는 현재 날짜
+                                        const startDate = formatDate(today);
+
+                                        // 현재 날짜(endDate)
+                                        const endDate = formatDate(new Date());
+
+                                        // 폼의 시작 날짜와 끝 날짜 필드에 값 입력
+                                        document.getElementById('startDate').value = startDate;
+                                        document.getElementById('endDate').value = endDate;
+                                    }
+
+                                    // 날짜를 'YYYY-MM-DDTHH:MM' 형식으로 변환하는 함수
+                                    function formatDate(date) {
+                                        const year = date.getFullYear();
+                                        const month = String(date.getMonth() + 1).padStart(2, '0');
+                                        const day = String(date.getDate()).padStart(2, '0');
+                                        const hours = String(date.getHours()).padStart(2, '0');
+                                        const minutes = String(date.getMinutes()).padStart(2, '0');
+                                        return `${year}-${month}-${day}T${hours}:${minutes}`;
+                                    }
+                                </script>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <br>
+
+                <!-- 저장된 콘텐츠가 있는 경우에만 페이지 번호 출력 -->
+                <th:block th:if="${contentsList.totalPages} > 0">
+                    <!-- 기본값 인 경우(최근 1주일 전)-->
+                    <th:block th:if="${search_opt} == 'default'">
+                        <th:block th:with="start=${T(java.lang.Math).floor(contentsList.number/10)*10 + 1},
+                        last=(${start + 9 < contentsList.totalPages ? start + 9 : (contentsList.totalPages > 0 ? contentsList.totalPages : 1)}),
+                        firstAddr=@{/pages/contents/contents_list(page=1)},
+                        prevAddr=@{/pages/contents/contents_list(page=${contentsList.number})},
+                        nextAddr=@{/pages/contents/contents_list(page=${contentsList.number + 2})},
+                        lastAddr=@{/pages/contents/contents_list(page=${contentsList.totalPages})}">
+
+                            <!-- pagination fragment -->
+                            <div>
+                                <ul class="pc_pagination pagination">
+                                    <!--맨 처음 페이지로 이동 -->
+                                    <li class="page-item pc_pagination_btn">
+                                        <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                            <span aria-hidden="true"><<</span>
+                                        </a>
+                                    </li>
+                                    <!-- 이전 페이지로 가기 버튼 -->
+                                    <li class="page-item" th:class="${contentsList.first} ? 'disabled'">
+                                        <a class="page-link" th:href="${contentsList.first} ? '#' :${prevAddr}"
+                                           aria-label="Previous">
+                                            <span aria-hidden="true"><</span>
+                                        </a>
+                                    </li>
+                                    <!--1,2,3,4,.. 등 페이지-->
+                                    <li class="page-item" th:each="page: ${#numbers.sequence(start, last)}"
+                                        th:class="${page == contentsList.number + 1} ? 'active'">
+                                        <a class="page-link" th:text="${page}" th:href="@{/pages/contents/contents_list(page=${page})}"></a>
+                                    </li>
+                                    <!--다음 페이지로 -->
+                                    <li class="page-item" th:class="${contentsList.last} ? 'disabled'">
+                                        <a class="page-link" th:href="${contentsList.last} ? '#' : ${nextAddr}"
+                                           aria-label="Next">
+                                            <span aria-hidden="true">></span>
+                                        </a>
+                                    </li>
+                                    <!--맨 마지막 페이지로 이동 -->
+                                    <li class="page-item pc_pagination_btn">
+                                        <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                            <span aria-hidden="true">>></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!--모바일용-->
+                            <div>
+                                <ul class="pagination mobile_pagination mobile_pagination_btn parent_height_set">
+                                    <!--맨 처음 페이지로 이동 -->
+                                    <li class="page-item mobile_first_btn">
+                                        <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                            <span aria-hidden="true"><<</span>
+                                        </a>
+                                    </li>
+                                    <!--맨 마지막 페이지로 이동 -->
+                                    <li class="page-item mobile_last_btn">
+                                        <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                            <span aria-hidden="true">>></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- pagination fragment -->
+                        </th:block>
+                    </th:block>
+
+
+                    <!-- 조회 옵션이 특정 기간인 경우 -->
+                    <th:block th:if="${search_opt} == 'oneself'">
+                        <th:block th:with="start=${T(java.lang.Math).floor(contentsList.number/10)*10 + 1},
+                        last=(${start + 9 < contentsList.totalPages ? start + 9 : (contentsList.totalPages > 0 ? contentsList.totalPages : 1)}),
+                        firstAddr=@{/pages/contents/contents_list(page=1, startDate=${startDate}, endDate=${endDate})},
+                        prevAddr=@{/pages/contents/contents_list(page=${contentsList.number}, startDate=${startDate}, endDate=${endDate})},
+                        nextAddr=@{/pages/contents/contents_list(page=${contentsList.number + 2}, startDate=${startDate}, endDate=${endDate})},
+                        lastAddr=@{/pages/contents/contents_list(page=${contentsList.totalPages}, startDate=${startDate}, endDate=${endDate})}">
+
+                            <!-- pagination fragment -->
+                            <div>
+                                <ul class="pc_pagination pagination">
+                                    <!--맨 처음 페이지로 이동 -->
+                                    <li class="page-item pc_pagination_btn">
+                                        <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                            <span aria-hidden="true"><<</span>
+                                        </a>
+                                    </li>
+                                    <!-- 이전 페이지로 가기 버튼 -->
+                                    <li class="page-item" th:class="${contentsList.first} ? 'disabled'">
+                                        <a class="page-link" th:href="${contentsList.first} ? '#' :${prevAddr}"
+                                           aria-label="Previous">
+                                            <span aria-hidden="true"><</span>
+                                        </a>
+                                    </li>
+                                    <!--1,2,3,4,.. 등 페이지-->
+                                    <li class="page-item" th:each="page: ${#numbers.sequence(start, last)}"
+                                        th:class="${page == contentsList.number + 1} ? 'active'">
+                                        <a class="page-link" th:text="${page}" th:href="@{/pages/contents/contents_list(page=${page}, startDate=${startDate}, endDate=${endDate})}"></a>
+                                    </li>
+                                    <!--다음 페이지로 -->
+                                    <li class="page-item" th:class="${contentsList.last} ? 'disabled'">
+                                        <a class="page-link" th:href="${contentsList.last} ? '#' : ${nextAddr}"
+                                           aria-label="Next">
+                                            <span aria-hidden="true">></span>
+                                        </a>
+                                    </li>
+                                    <!--맨 마지막 페이지로 이동 -->
+                                    <li class="page-item pc_pagination_btn">
+                                        <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                            <span aria-hidden="true">>></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <!--모바일용-->
+                            <div>
+                                <ul class="pagination mobile_pagination mobile_pagination_btn parent_height_set">
+                                    <!--맨 처음 페이지로 이동 -->
+                                    <li class="page-item mobile_first_btn">
+                                        <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                            <span aria-hidden="true"><<</span>
+                                        </a>
+                                    </li>
+                                    <!--맨 마지막 페이지로 이동 -->
+                                    <li class="page-item mobile_last_btn">
+                                        <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                            <span aria-hidden="true">>></span>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            <!-- pagination fragment -->
+                        </th:block>
+                    </th:block>
+                </th:block>
+
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+    // 모든 이미지 요소를 가져옵니다.
+    const images = document.querySelectorAll('img[data-bs-toggle="modal"]');
+
+    // 각 이미지를 클릭했을 때 실행될 함수
+    images.forEach(image => {
+        image.addEventListener('click', function() {
+            // 클릭된 이미지의 src 값을 모달 이미지에 동적으로 설정
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = image.src;  // 클릭된 이미지의 src 를 가져와 모달 이미지에 설정
+        });
+    });
+
+    // 콘텐츠 삭제
+    function onDelete(contents_id){
+        if (window.confirm('해당 콘텐츠를 삭제하시겠습니까?'))
+        {
+            //삭제 REST API 호출
+            const url = `/pages/contents/delete/`+contents_id;
+
+            fetch(url, {
+                method: "DELETE"
+            }).then(response=>response.text())
+                .then((text)=>{
+                    if(text !== "Success"){
+                        alert(text);
+                        return;
+                    }
+
+                    //삭제 성공시 메시지 창 띄우기
+                    const msg = `콘텐츠가 삭제되었습니다.`;
+                    alert(msg);
+                    window.location.reload();
+                })
+        }
+        else {}
+    }
+
+    const modalDetailInfo = document.querySelector("#modalDetailInfo");
+    modalDetailInfo.addEventListener("show.bs.modal", function (event){
+        //트리거 버튼 선택
+        const triggerBtn = event.relatedTarget;
+
+        //데이터 가져오기
+        const generatedDate = triggerBtn.getAttribute("data-generated-date");
+        const emotion = triggerBtn.getAttribute("data-emotion");
+        const emotionType = triggerBtn.getAttribute("data-emotionType"); //
+        const emotionDetail = triggerBtn.getAttribute("data-emotionDetail");
+        const emotionTypeDetail = triggerBtn.getAttribute("data-emotionTypeDetail");
+
+        document.getElementById("modalDetailInfo_body").innerHTML = `
+    <table class="DetailInfo">
+        <thead>
+            <tr>
+                <th>항목</th>
+                <th>내용</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>생성 날짜</td>
+                <td>${generatedDate}</td>
+            </tr>
+            <tr>
+                <td>감정 결과</td>
+                <td>${emotion}</td>
+            </tr>
+            <tr>
+                <td>감정 설명</td>
+                <td>${emotionDetail}</td>
+            </tr>
+            <tr>
+                <td>감정 타입</td>
+                <td>${emotionType}</td>
+            </tr>
+            <tr>
+                <td>감정 타입 설명</td>
+                <td>${emotionTypeDetail}</td>
+            </tr>
+        </tbody>
+    </table>
+`;
+
+    });
+
+
+    function checkField() {
+        let form = document.forms["contents_Date_form"];
+
+        try {
+            // 시작 날짜와 끝 날짜 값 가져오기
+            let startDate = form.startDate.value;
+            let endDate = form.endDate.value;
+
+            // 시작 날짜가 입력되지 않았으면
+            if (!startDate) {
+                alert("시작 날짜를 입력하세요.");
+                return false;  // 이동 금지
+            }
+
+            // 끝 날짜가 입력되지 않았으면
+            if (!endDate) {
+                alert("끝 날짜를 입력하세요.");
+                return false;  // 이동 금지
+            }
+
+            // 시작 날짜와 끝 날짜를 Date 객체로 변환
+            let start = new Date(startDate);
+            let end = new Date(endDate);
+
+            // 시작 날짜가 끝 날짜보다 이후인 경우
+            if (start > end) {
+                alert("시작 날짜는 끝 날짜보다 이후일 수 없습니다.");
+                return false;  // 이동 금지
+            }
+
+            // 끝 날짜가 시작 날짜보다 이전인 경우
+            if (end < start) {
+                alert("끝 날짜는 시작 날짜보다 이전일 수 없습니다.");
+                return false;  // 이동 금지
+            }
+
+        } catch (error) {
+            alert(error);
+            return false;  // 오류 발생 시 이동 금지
+        }
+
+        // 모든 검증이 통과되면 true 반환
+        return true;
+    }
+
+</script>
+</body>
+</html>

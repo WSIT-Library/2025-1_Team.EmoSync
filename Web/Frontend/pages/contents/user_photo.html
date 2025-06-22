@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+    <!-- 화면 캡쳐 CDN -->
+    <script src="/js/html2canvas.min.js"></script>
+    <style>
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+    <input type="hidden" id="userId" th:value="${userId}">
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">사진 촬영 및 녹음</span></h1>
+        </div>
+        <div class="row gx-2 justify-content-center">
+            <div class="col-lg-11 col-xl-10 col-xxl-9">
+                <section>
+                    <div class="card shadow border-0 rounded-4 mb-5">
+                        <div class="card-body">
+                            <div class="alert alert-primary alert-dismissible fade show d-flex flex-wrap align-items-center" role="alert">
+                                <span class="me-2">일일 콘텐츠 생성 가능 횟수: [[${remainingAttempts}]]회</span>
+                                <a class="upgrade-btn me-auto mt-2 mt-sm-0" href="/pages/plan/payment">업그레이드</a>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            <div class="text-center my-5">
+                                <p class="lead mb-4">사용자의 현재 표정을 카메라로 촬영합니다.</p>
+                                <p class="text-muted">표정을 분석하여 감정을 유추합니다.</p>
+                            </div>
+                            <!-- 웹캠 영역 -->
+                            <div style="width: 100%" class="d-flex justify-content-center align-items-center mb-3">
+                                <div class="border p-3 col-12 col-sm-10 col-md-8 col-lg-6">
+                                    <video id="CameraView" poster="/static/assets/default_profile.png" style="width: 100%; height: 100%; object-fit: contain;"></video>
+                                </div>
+                            </div>
+                            <!-- 카메라 On/off 버튼 -->
+                            <div class="text-center mb-3">
+                                <button id="openBtn" class="btn btn-outline-primary">카메라 켜기</button>
+                                <button id="closeBtn" class="btn btn-outline-primary">카메라 끄기</button>
+                            </div>
+                            <!-- 사진 촬영 버튼 -->
+                            <div class="text-center mb-5">
+                                <button id="takePhoto" class="btn btn-outline-primary" onclick="takePhoto()"><i class="bi bi-camera-fill"></i>사진 촬영</button>
+                            </div>
+                            <!-- 사진 촬영 결과 출력 -->
+                            <div style="width: 100%" class="d-flex justify-content-center align-items-center mb-3">
+                                <div id="capture_result" class="border p-3 col-12 col-sm-10 col-md-8 col-lg-6 hidden"></div>
+                            </div>
+                            <div class="text-center mb-5 hidden" id="re_takePhoto_div">
+                                <button id="re_takePhoto" class="btn btn-outline-primary" onclick="re_takePhoto()">다시 찍기</button>
+                            </div>
+
+                            <hr>
+
+                            <div class="text-center my-5">
+                                <p class="lead mb-4">사용자의 목소리를 마이크로 녹음합니다.</p>
+                                <p class="text-muted">목소리를 분석하여 감정을 유추합니다.</p>
+                            </div>
+
+                            <!-- 음성 녹음 버튼 -->
+                            <div class="text-center mb-5">
+                                <button id="recordBtn" class="btn btn-outline-primary"><i class="bi bi-mic-fill"></i> 녹음 시작</button>
+                                <span id="timer"></span>
+                            </div>
+
+                            <!-- 음성 녹음 결과 재생 -->
+                            <div class="text-center mb-5">
+                                <div id="audioContainer" style="margin-top: 20px;"></div>
+                            </div>
+
+                            <!-- 콘텐츠 생성 및 다시 찍기 버튼 -->
+                            <div class="text-center mt-5 mb-3">
+                                <button id="sendPhoto" class="btn btn-primary btn-lg" onclick="sendUserFile()">콘텐츠 생성</button>
+                            </div>
+                            <!-- 로딩 스피너 영역 -->
+                            <div class="d-flex justify-content-center" id="loadingSpinner">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script th:inline="javascript">
+    // 서버로 전송할 formData. 이곳에 이미지와 음성 파일이 append 됨
+    const formData = new FormData();
+
+    let streamVideo
+
+    // 카메라 켜져 있는지 확인
+    let cameraOn = false;
+
+    // 사진 찍었는지 확인
+    let takePhoto_ck = false;
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia )
+    {
+        alert("Media Device not supported")
+    } else {
+        document.getElementById("openBtn").addEventListener('click',open)
+        document.getElementById("closeBtn").addEventListener('click',close)
+        open()
+    }
+
+    // 카메라 켜기
+    function open() {
+        close()
+        navigator.mediaDevices.getUserMedia({video:true}).then(stream => {
+            cameraOn = true;
+            streamVideo = stream
+            let cameraView = document.getElementById("CameraView");
+            cameraView.srcObject = stream;
+            cameraView.play()
+        })
+    }
+
+    // 카메라 끄기
+    function close() {
+        if (streamVideo) {
+            cameraOn = false;
+            let track = streamVideo.getTracks()
+            track[0].stop()
+            streamVideo = null
+        }
+    }
+
+    // 사진 촬영
+    function takePhoto(){
+        if(!cameraOn){
+            alert("카메라를 켜주세요");
+        }
+        else{
+            takePhoto_ck = true;
+            // 사진 캡쳐한 후에 div 태그에 출력하기
+            html2canvas(document.querySelector("#CameraView")).then(canvas => {
+                document.getElementById('capture_result').style.display = 'block';
+                document.getElementById('re_takePhoto_div').style.display = 'block';
+                document.querySelector("#capture_result").appendChild(canvas)
+                let capture_result = document.getElementById("capture_result")
+                capture_result.scrollIntoView({behavior : 'smooth'})
+            });
+
+        }
+    }
+
+    // 사진 다시 찍기
+    function re_takePhoto(){
+        takePhoto_ck = false;
+        // 기존에 찍었던 사진을 화면에서 지우기
+        document.getElementById('capture_result').innerHTML = '';
+        document.getElementById('capture_result').style.display = 'none';
+        document.getElementById('re_takePhoto_div').style.display = 'none';
+
+        // 웹캠 위치로 스크롤
+        let CameraView = document.getElementById("CameraView")
+        CameraView.scrollIntoView({behavior : 'smooth'})
+    }
+
+    // 음성 녹음
+    const recordBtn = document.getElementById('recordBtn');
+    const audioContainer = document.getElementById('audioContainer');
+    const timerEl = document.getElementById('timer');
+
+    let mediaRecorder;
+    let audioChunks = [];
+    let countdownInterval;
+
+    // 음성 녹음 여부
+    let recordVoice = false;
+
+    // 오디오 저장용 blob
+    let audioBlob = null;
+
+
+    recordBtn.addEventListener('click', async () => {
+        recordVoice = false; // 새 녹음 시작할 때 초기화
+        recordBtn.disabled = true;
+        //recordBtn.textContent = '녹음 중...';
+
+        recordBtn.innerHTML = "<div class=\"spinner-border\" role=\"status\">\n" +
+            "                                    <span class=\"visually-hidden\">Loading...</span>\n" +
+            "                                </div>\n" +
+            "                                <span class=\"ms-2\">\n" +
+            "    녹음 중...<br>\n" +
+            "</span>";
+
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaRecorder = new MediaRecorder(stream);
+            audioChunks = [];
+
+            mediaRecorder.ondataavailable = event => {
+                audioChunks.push(event.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                // 녹음이 완료되었으므로 true 로 설정
+                recordVoice = true;
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = audioUrl;
+
+                audioContainer.innerHTML = '';
+                audioContainer.appendChild(audio);
+
+                recordBtn.disabled = false;
+                recordBtn.textContent = '🎙️ 녹음 다시 시작';
+                timerEl.textContent = '';
+                clearInterval(countdownInterval);
+            };
+
+            mediaRecorder.start();
+
+            // 타이머 표시
+            let timeLeft = 8;
+            timerEl.textContent = `(${timeLeft}초 남음)`;
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                timerEl.textContent = `(${timeLeft}초 남음)`;
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    mediaRecorder.stop();
+                }
+            }, 1000);
+        } catch (err) {
+            alert('마이크 접근이 거부되었습니다.');
+            console.error(err);
+            recordBtn.disabled = false;
+            recordBtn.textContent = '🎙️ 녹음 시작';
+            timerEl.textContent = '';
+        }
+    });
+
+    // 서버로 이미지, 음성 파일 전송
+    function sendUserFile() {
+        if(!takePhoto_ck){
+            alert("사진을 촬영해주세요");
+            let CameraView = document.getElementById("CameraView")
+            CameraView.scrollIntoView({behavior : 'smooth'})
+            return;
+        }
+
+        if (!recordVoice) {
+            alert("음성 녹음을 완료해주세요");
+            let recordBtn = document.getElementById("recordBtn")
+            recordBtn.scrollIntoView({behavior : 'smooth'})
+            return;
+        }
+
+        if (!audioBlob) {
+            alert("녹음된 오디오가 없습니다");
+            return;
+        }
+
+        /*<![CDATA[*/
+        // 일일 콘텐츠 생성 가능 횟수
+        let remainingAttempts = /*[[${remainingAttempts}]]*/;
+        if(remainingAttempts < 1){
+            alert("일일 콘텐츠 생성 가능 횟수가 모두 소진되었습니다.\n플랜을 업그레이드 하거나 다음날 이용해주세요.");
+            return;
+        }
+        /*]]>*/
+
+        // #capture_result div 에서 캡쳐된 canvas 요소 찾기
+        const canvas = document.querySelector("#capture_result canvas");
+
+        if (canvas) {
+            // 캡쳐된 이미지를 Blob 으로 변환
+            canvas.toBlob(function(blob) {
+                // Blob 데이터를 FormData 에 첨부
+                formData.append("UserImage", blob, "captured-image.png");
+
+                // 오디오 blob 데이터도 폼데이터에 첨부
+                formData.append('UserAudio', audioBlob, 'record-voice.webm');
+
+                // 콘텐츠 생성을 요청한 유저의 ID 첨부
+                let userId = $('#userId').val();
+                formData.append('userId', userId);
+
+                const spinner = document.getElementById("loadingSpinner");
+
+                spinner.innerHTML = "<div class=\"spinner-border\" role=\"status\">\n" +
+                    "                                    <span class=\"visually-hidden\">Loading...</span>\n" +
+                    "                                </div>\n" +
+                    "                                <span class=\"ms-2\">\n" +
+                    "    콘텐츠 생성 중...<br>\n" +
+                    "    (환경에 따라 3분~5분 정도 소요)\n" +
+                    "</span>";
+
+                // POST 요청을 통해 서버로 전송
+                fetch('/UserUpload', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => {
+                        // 서버에서 "업로드가 시작되었습니다." 메시지를 받은 경우 처리
+                        if (response.ok) {
+                            return response.text(); // 응답을 텍스트로 처리
+                        } else {
+                            throw new Error("생성 요청에 실패했습니다.");
+                        }
+                    })
+                    .then(message => {
+                        // 서버에서 받은 메시지를 alert 로 표시
+                        alert(message); // "업로드가 시작되었습니다. 상태를 확인해 주세요." 메시지가 alert로 표시됩니다.
+                    })
+                    .catch(error => {
+                        // 오류 발생 시 alert 로 표시
+                        console.error('Error :', error);
+                        alert('생성 요청 오류가 발생했습니다. 다시 시도해 주세요.');
+                    });
+            });
+        } else {
+            console.error('No image to send!');
+        }
+    }
+
+</script>
+</body>
+</html>

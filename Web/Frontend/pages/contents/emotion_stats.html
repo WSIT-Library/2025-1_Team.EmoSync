@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+    <!-- 화면 캡쳐 CDN -->
+    <script src="/js/html2canvas.min.js"></script>
+
+    <style>
+        /* 기본적으로 화살표 버튼을 숨김 */
+        .carousel-control-prev, .carousel-control-next {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* 마우스가 carousel 영역에 있을 때 화살표 버튼이 보이도록 */
+        .carousel:hover .carousel-control-prev,
+        .carousel:hover .carousel-control-next {
+            opacity: 1;
+        }
+
+        .date-range {
+            font-size: 16px;  /* 기본 폰트 크기 */
+        }
+
+        @media screen and (max-width: 600px) {
+            .date-range {
+                font-size: 14px;  /* 모바일에서 작은 폰트 크기 */
+                word-wrap: break-word;
+            }
+        }
+
+
+        .score-very-low { color: #e74c3c;}   /* 빨강 */
+        .score-low      { color: #e67e22;}   /* 주황 */
+        .score-mid      { color: #f1c40f;}   /* 노랑 */
+        .score-high     { color: #2ecc71;}   /* 연두 */
+        .score-very-high{ color: #3498db;}   /* 파랑 */
+
+        .State-very-low {background-color: #e74c3c;}
+        .State-low {background-color: #e67e22;}
+        .State-mid {background-color: #f1c40f;}
+        .State-high {background-color: #2ecc71;}
+        .State-very-high {background-color: #3498db;}
+
+        .emoji {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bolder mb-0"><span class="d-inline">감정 통계</span></h1>
+
+            <!-- 기간 조회 버튼들 -->
+            <div class="d-flex justify-content-center gap-3 mt-4">
+                <th:block th:if="${search_opt} == 'default'">
+                    <button type="button" class="btn btn-primary" onclick="window.location.href='/pages/contents/emotion_stats';">최근 내역(1주일)</button>
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#specificPeriodModal">특정 기간 조회</button>
+                </th:block>
+                <th:block th:if="${search_opt} == 'oneself'">
+                    <button type="button" class="btn btn-outline-primary" onclick="window.location.href='/pages/contents/emotion_stats';">최근 내역(1주일)</button>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#specificPeriodModal">특정 기간 조회</button>
+                </th:block>
+            </div>
+
+            <!-- 날짜 범위 출력 부분 -->
+            <div class="mt-2 text-center" th:if="${startDate != null and endDate != null}">
+                <span class="date-range" th:text="'조회 기간: ' + ${#temporals.format(startDate, 'yyyy/MM/dd · HH:mm')} + ' ~ ' + ${#temporals.format(endDate, 'yyyy/MM/dd · HH:mm')}"></span>
+            </div>
+        </div>
+
+        <div class="px-4 row gx-5 justify-content-center">
+            <div class="col-lg-11 col-xl-9 col-xxl-8 px-0">
+                <!-- Begin Page Content -->
+                <div class="container-fluid">
+                    <!-- Bar Chart(복합 감정) -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">감정 요약</h6>
+                        </div>
+                        <div class="card-body">
+                            <th:block th:if="${EmotionScore != null and EmotionState != null}">
+                                <h5 class="card-title text-primary mb-3">감정 분석 결과</h5>
+
+                                <div class="card-text fs-4">
+                                    <strong>감정 점수:</strong>
+                                    <span class="text-info" th:switch="${EmotionState}">
+                                    <span th:case="'매우 좋음'" class="score-very-high fw-bold">[[${EmotionScore}]]점</span>
+                                    <span th:case="'약간 좋음'" class="score-high fw-bold">[[${EmotionScore}]]점</span>
+                                    <span th:case="'보통'" class="score-mid fw-bold">[[${EmotionScore}]]점</span>
+                                    <span th:case="'약간 나쁨'" class="score-low fw-bold">[[${EmotionScore}]]점</span>
+                                    <span th:case="'매우 나쁨'" class="score-very-low fw-bold">[[${EmotionScore}]]점</span>
+                                </span>
+
+                                    <div class="position-relative mt-2 mb-1" style="height: 30px;">
+
+                                        <!-- 기준선들 (ticks) -->
+                                        <div style="position: absolute; top: 0; left: 20%; height: 100%; border-left: 1px solid #ccc;"></div>
+                                        <div style="position: absolute; top: 0; left: 40%; height: 100%; border-left: 1px solid #ccc;"></div>
+                                        <div style="position: absolute; top: 0; left: 60%; height: 100%; border-left: 1px solid #ccc;"></div>
+                                        <div style="position: absolute; top: 0; left: 80%; height: 100%; border-left: 1px solid #ccc;"></div>
+
+                                        <!-- Progress Bar -->
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar" role="progressbar"
+                                                 th:classappend="
+        ${EmotionState} == '매우 좋음' ? 'State-very-high' :
+        (${EmotionState} == '약간 좋음' ? 'State-high' :
+        (${EmotionState} == '보통' ? 'State-mid' :
+        (${EmotionState} == '약간 나쁨' ? 'State-lowg' :
+        'State-very-low')))"
+                                                 th:style="'width: ' + ${EmotionScore} + '%'"
+                                                 th:aria-valuenow="${EmotionScore}"
+                                                 aria-valuemin="0" aria-valuemax="100">
+                                                [[${EmotionScore}]]점
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                                <!-- Emotion Labels Below Bar -->
+                                <div class="position-relative" style="height: 1.5rem;">
+                                    <div class="d-flex justify-content-between text-muted small position-absolute w-100" style="top: 0;">
+                                        <span style="width: 20%; text-align: left;">매우 나쁨</span>
+                                        <span style="width: 20%; text-align: center;">약간 나쁨</span>
+                                        <span style="width: 20%; text-align: center;">보통</span>
+                                        <span style="width: 20%; text-align: center;">약간 좋음</span>
+                                        <span style="width: 20%; text-align: right;">매우 좋음</span>
+                                    </div>
+                                </div>
+
+                                <div class="card-text fs-4 mt-3">
+                                    <strong>감정 상태:</strong>
+                                    <span class="text-muted" th:switch="${EmotionState}">
+                                    <span th:case="'매우 좋음'" class="score-very-high fw-bold"><i class="bi  bi-emoji-heart-eyes text-success"></i> [[${EmotionState}]]</span>
+                                    <span th:case="'약간 좋음'" class="score-high fw-bold"><i class="bi bi-emoji-smile text-success"></i> [[${EmotionState}]]</span>
+                                    <span th:case="'보통'" class="score-mid fw-bold"><i class="bi bi-emoji-neutral text-success"></i> [[${EmotionState}]]</span>
+                                    <span th:case="'약간 나쁨'" class="score-low fw-bold"><i class="bi bi-emoji-frown text-success"></i> [[${EmotionState}]]</span>
+                                    <span th:case="'매우 나쁨'" class="score-very-low fw-bold"><i class="bi bi-emoji-angry text-success"></i> [[${EmotionState}]]</span>
+                                </span>
+                                </div>
+                                <div class="alert alert-light border-start border-4 border-primary mt-4" role="alert">
+                                    <em>“[[${recommended_phrase}]]”</em>
+                                </div>
+                            </th:block>
+                            <th:block th:unless="${EmotionScore != null and EmotionState != null}">
+                                저장된 데이터가 없습니다.
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <!-- Bar Chart(복합 감정) -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">복합 감정 상태 분포 <i class="bi bi-question-circle-fill" data-bs-toggle="modal" data-bs-target="#modalEmotionTable"></i></h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-area">
+<!--                                <th:block th:if="${BarData_mixed} != null">-->
+<!--                                    <canvas id="BarData_mixedChart" width="400" height="400"></canvas>-->
+<!--                                </th:block>-->
+<!--                                <th:block th:unless="${BarData_mixed} != null">-->
+<!--                                    저장된 데이터가 없습니다.-->
+<!--                                </th:block>-->
+
+                                <!-- 각 데이터 중에서 한개라도 null 이 아니면 차트 출력-->
+                                <th:block th:if="${BarData_mixed1 != null or BarData_mixed2 != null}">
+                                    <div id="carouselMixed" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                                        <div class="carousel-inner">
+                                            <div class="carousel-item active">
+                                                <canvas id="mixedChart1" width="400" height="400"></canvas>
+                                            </div>
+                                            <div class="carousel-item">
+                                                <canvas id="mixedChart2" width="400" height="400"></canvas>
+                                            </div>
+                                        </div>
+                                        <button class="carousel-control-prev" type="button" data-bs-target="#carouselMixed" data-bs-slide="prev">
+                                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                            <span class="visually-hidden">Previous</span>
+                                        </button>
+                                        <button class="carousel-control-next" type="button" data-bs-target="#carouselMixed" data-bs-slide="next">
+                                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                            <span class="visually-hidden">Next</span>
+                                        </button>
+                                    </div>
+                                </th:block>
+                                <!-- 모든 데이터가 null 인 경우에는 차트를 출력하지 않음 -->
+                                <th:block th:if="${BarData_mixed1 == null and BarData_mixed2 == null}">
+                                    저장된 데이터가 없습니다.
+                                </th:block>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Bar Chart(단일 감정) -->
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">단일 감정 상태 분포 <i class="bi bi-question-circle-fill" data-bs-toggle="modal" data-bs-target="#modalSingleEmotionTable"></i></h6>
+                        </div>
+                        <div class="card-body">
+                            <!-- 각 데이터 중에서 한개라도 null 이 아니면 차트 출력-->
+                            <th:block th:if="${BarData_low != null or BarData_middle != null or BarData_high != null}">
+                                <div id="carouselExampleControls" class="carousel carousel-dark slide" data-bs-ride="carousel">
+                                    <div class="carousel-inner">
+                                        <div class="carousel-item active">
+                                            <canvas id="LowChart" width="400" height="400"></canvas>
+                                        </div>
+                                        <div class="carousel-item">
+                                            <canvas id="MiddleChart" width="400" height="400"></canvas>
+                                        </div>
+                                        <div class="carousel-item">
+                                            <canvas id="HighChart" width="400" height="400"></canvas>
+                                        </div>
+                                    </div>
+                                    <button class="carousel-control-prev" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Previous</span>
+                                    </button>
+                                    <button class="carousel-control-next" type="button" data-bs-target="#carouselExampleControls" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Next</span>
+                                    </button>
+                                </div>
+                            </th:block>
+                            <!-- 모든 데이터가 null 인 경우에는 차트를 출력하지 않음 -->
+                            <th:block th:if="${BarData_low == null and BarData_middle == null and BarData_high == null}">
+                                저장된 데이터가 없습니다.
+                            </th:block>
+                        </div>
+                    </div>
+
+                    <!-- Donut Chart -->
+                    <div class="card shadow mb-4">
+                        <!-- Card Header - Dropdown -->
+                        <div class="card-header py-3">
+                            <h6 class="m-0 font-weight-bold text-primary">감정 타입 비율(%) <i class="bi bi-question-circle-fill" data-bs-toggle="modal" data-bs-target="#modalEmotionTypeTable"></i></h6>
+                        </div>
+                        <!-- Card Body -->
+                        <div class="card-body">
+                            <div class="chart-pie">
+                                <th:block th:if="${DonutData} != null">
+                                    <canvas id="myDonutChart" width="400" height="400"></canvas>
+                                </th:block>
+                                <th:block th:unless="${DonutData} != null">
+                                    저장된 데이터가 없습니다.
+                                </th:block>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                <!-- /.container-fluid -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 특정 기간 조회 모달 -->
+    <div class="modal fade" id="specificPeriodModal" tabindex="-1" aria-labelledby="specificPeriodModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="specificPeriodModalLabel">특정 기간 조회</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- 기간을 선택할 수 있는 폼 -->
+                    <form name="emotion_Date_form" action="/pages/contents/emotion_stats" method="get" onsubmit="return checkField()">
+                        <!-- 버튼 그룹을 감싸는 div에 d-flex와 justify-content-center 추가 -->
+                        <div class="btn-group mb-3 d-flex justify-content-center" role="group" aria-label="Date Range Selection">
+                            <button type="button" class="btn btn-outline-primary" onclick="setDateRange(1)">1개월 전</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setDateRange(3)">3개월 전</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setDateRange(6)">6개월 전</button>
+                            <button type="button" class="btn btn-outline-primary" onclick="setDateRange(12)">12개월 전</button>
+                        </div>
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">시작 날짜</label>
+                            <input type="datetime-local" class="form-control" name="startDate" id="startDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">끝 날짜</label>
+                            <input type="datetime-local" class="form-control" name="endDate" id="endDate">
+                        </div>
+                        <hr>
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary">조회</button>
+                        </div>
+                    </form>
+
+                    <script>
+                        function setDateRange(monthsAgo) {
+                            const today = new Date();
+
+                            // 현재 날짜를 기준으로 'monthsAgo' 개월 전 날짜 계산
+                            today.setMonth(today.getMonth() - monthsAgo);
+
+                            // 시작 날짜는 'monthsAgo' 개월 전, 끝 날짜는 현재 날짜
+                            const startDate = formatDate(today);
+
+                            // 현재 날짜(endDate)
+                            const endDate = formatDate(new Date());
+
+                            // 폼의 시작 날짜와 끝 날짜 필드에 값 입력
+                            document.getElementById('startDate').value = startDate;
+                            document.getElementById('endDate').value = endDate;
+                        }
+
+                        // 날짜를 'YYYY-MM-DDTHH:MM' 형식으로 변환하는 함수
+                        function formatDate(date) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            return `${year}-${month}-${day}T${hours}:${minutes}`;
+                        }
+                    </script>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 모달 (복합 감정표) -->
+<div class="modal fade" id="modalEmotionTable" tabindex="-1" aria-labelledby="modalEmotionTableLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEmotionTableLabel">복합 감정표</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalEmotionTable_body">
+                <table class="modal-table">
+                    <thead>
+                    <tr>
+                        <th>감정 이름</th>
+                        <th>설명</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr><td>excited</td><td>기쁨과 놀람이 섞여서 '흥분'된 상태</td></tr>
+                    <tr><td>content</td><td>행복하고 중립적인 상태에서 '만족'한 상태</td></tr>
+                    <tr><td>curious</td><td>놀람과 중립적인 상태에서 '호기심'을 느끼는 상태</td></tr>
+                    <tr><td>amused</td><td>웃긴 상황에서 '재미있어 하는' 상태</td></tr>
+                    <tr><td>anxious</td><td>두려움과 슬픔이 결합된 '불안'한 상태</td></tr>
+                    <tr><td>nervous</td><td>두려움과 놀람이 결합된 '긴장'한 상태</td></tr>
+                    <tr><td>frustrated</td><td>화남과 슬픔이 결합된 '좌절'된 상태</td></tr>
+                    <tr><td>irritated</td><td>화가 나고 중립적인 상태에서 '짜증'나는 상태</td></tr>
+                    <tr><td>melancholy</td><td>슬픔과 중립적인 상태에서 '우울'한 상태</td></tr>
+                    <tr><td>tired</td><td>슬픔과 중립적인 상태에서 '피곤'한 상태</td></tr>
+                    <tr><td>bored</td><td>감정이 거의 없고 지루한 상태</td></tr>
+                    <tr><td>shocked</td><td>놀람과 두려움이 결합된 '충격'받은 상태</td></tr>
+                    <tr><td>confused</td><td>놀람과 두려움, 중립적인 상태에서 '혼란'스러운 상태</td></tr>
+                    <tr><td>affectionate</td><td>행복과 중립적인 상태에서 '애정'을 느끼는 상태</td></tr>
+                    <tr><td>serious</td><td>중립적인 상태에서 화나거나 슬픈 감정이 있는 '진지'한 상태</td></tr>
+                    <tr><td>determined</td><td>화남과 중립적인 상태에서 '결단'을 내린 상태</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 모달 (분석한 감정표) -->
+<div class="modal fade" id="modalSingleEmotionTable" tabindex="-1" aria-labelledby="modalSingleEmotionTableLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSingleEmotionTableLabel">단일 감정표</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalSingleEmotionTable_body">
+                <table class="modal-table">
+                    <thead>
+                    <tr>
+                        <th>강도</th>
+                        <th>이름</th>
+                        <th>설명</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr><td rowspan="7">low</td><td><strong>happy</strong></td><td>행복하지만 비교적 낮은 강도의 기쁨</td></tr>
+                    <tr><td>neutral</td><td>중립적이고 비교적 낮은 감정</td></tr>
+                    <tr><td>surprise</td><td>놀람이 비교적 낮은 강도의 놀람</td></tr>
+                    <tr><td>disgusted</td><td>혐오감이 비교적 낮은 상태</td></tr>
+                    <tr><td>sad</td><td>슬픔이 비교적 낮은 강도의 슬픔</td></tr>
+                    <tr><td>angry</td><td>화남이 비교적 낮은 강도의 화남</td></tr>
+                    <tr><td>fear</td><td>두려움이 비교적 낮은 강도의 두려움</td></tr>
+
+                    <tr><td rowspan="7">middle</td><td><strong>happy</strong></td><td>중간 정도의 행복</td></tr>
+                    <tr><td>neutral</td><td>중간 정도의 중립</td></tr>
+                    <tr><td>surprise</td><td>중간 정도의 놀람</td></tr>
+                    <tr><td>disgusted</td><td>중간 정도의 혐오감</td></tr>
+                    <tr><td>sad</td><td>중간 정도의 슬픔</td></tr>
+                    <tr><td>angry</td><td>중간 정도의 화남</td></tr>
+                    <tr><td>fear</td><td>중간 정도의 두려움</td></tr>
+
+                    <tr><td rowspan="7">high</td><td><strong>happy</strong></td><td>매우 강한 행복</td></tr>
+                    <tr><td>neutral</td><td>매우 강한 중립</td></tr>
+                    <tr><td>surprise</td><td>매우 강한 놀람</td></tr>
+                    <tr><td>disgusted</td><td>매우 강한 혐오감</td></tr>
+                    <tr><td>sad</td><td>매우 강한 슬픔</td></tr>
+                    <tr><td>angry</td><td>매우 강한 화남</td></tr>
+                    <tr><td>fear</td><td>매우 강한 두려움</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 모달 (감정 타입) -->
+<div class="modal fade" id="modalEmotionTypeTable" tabindex="-1" aria-labelledby="modalEmotionTypeTableLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalEmotionTypeTableLabel">감정 타입표</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="modalEmotionTypeTable_body">
+                <table class="modal-table">
+                    <thead>
+                    <tr>
+                        <th>감정 타입</th>
+                        <th>설명</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr><td>positive</td><td>긍정적인 감정</td></tr>
+                    <tr><td>negative</td><td>부정적인 감정</td></tr>
+                    <tr><td>neutral</td><td>중립적인 감정</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+
+<script src="/js/chart.js/Chart.min.js"></script>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+    Chart.defaults.global.defaultFontFamily = 'Nunito', '-apple-system,system-ui,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif';
+    Chart.defaults.global.defaultFontColor = '#858796';
+
+    // 데이터 값
+    let BarData_mixed1 = /*[[${BarData_mixed1}]]*/;
+
+    let BarData_mixed1Ctx = document.getElementById('mixedChart1').getContext('2d');
+    let BarData_mixed1Chart = new Chart(BarData_mixed1Ctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [
+                "흥분", "만족", "호기심", "재미있는",
+                "불안", "긴장", "좌절", "짜증"
+            ],
+            datasets: [{
+                label: "복합 감정 빈도",
+                data: BarData_mixed1,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...BarData_mixed1) + 1,
+                        callback: function(value) {
+                            return value % 1 === 0 ? value : ''; // 소수점 제외
+                        }
+                    }
+                }]
+            }
+        }
+    });
+
+    // 데이터 값
+    let BarData_mixed2 = /*[[${BarData_mixed2}]]*/;
+
+    let BarData_mixed2Ctx = document.getElementById('mixedChart2').getContext('2d');
+    let BarData_mixed2Chart = new Chart(BarData_mixed2Ctx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [
+                "우울", "피곤함", "지루함", "충격",
+                "혼란", "애정", "진지함", "결단"
+            ],
+            datasets: [{
+                label: "복합 감정 빈도",
+                data: BarData_mixed2,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...BarData_mixed2) + 1,
+                        callback: function(value) {
+                            return value % 1 === 0 ? value : ''; // 소수점 제외
+                        }
+                    }
+                }]
+            }
+        }
+    });
+
+
+    // 단일 감정 low 빈도 수 차트
+    let BarData_low = /*[[${BarData_low}]]*/;
+    let BarData_lowCtx = document.getElementById('LowChart').getContext('2d');
+    let LowChart = new Chart(BarData_lowCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [
+                "낮은 강도의 기쁨",
+                "낮은 강도의 중립",
+                "낮은 강도의 놀람",
+                "낮은 강도의 혐오감",
+                "낮은 강도의 슬픔",
+                "낮은 강도의 화남",
+                "낮은 강도의 두려움"
+            ],
+            datasets: [{
+                label: "단일 감정 빈도(Low)",
+                data: BarData_low,
+                backgroundColor: 'rgba(100, 149, 237, 0.2)', // cornflowerblue
+                borderColor: 'rgba(100, 149, 237, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...BarData_low) + 1,
+                        callback: function(value) {
+                            return value % 1 === 0 ? value : ''; // 소수점 제외
+                        }
+                    }
+                }]
+            }
+        }
+    });
+
+
+    // 단일 감정 middle 빈도 수 차트
+    let BarData_middle = /*[[${BarData_middle}]]*/;
+    let BarData_middleCtx = document.getElementById('MiddleChart').getContext('2d');
+    let MiddleChart = new Chart(BarData_middleCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [
+                "중간 정도의 행복",
+                "중간 정도의 중립",
+                "중간 정도의 놀람",
+                "중간 정도의 혐오감",
+                "중간 정도의 슬픔",
+                "중간 정도의 화남",
+                "중간 정도의 두려움"
+            ],
+            datasets: [{
+                label: "단일 감정 빈도(Middle)",
+                data: BarData_middle,
+                backgroundColor: 'rgba(60, 179, 113, 0.2)', // mediumseagreen
+                borderColor: 'rgba(60, 179, 113, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...BarData_middle) + 1,
+                        callback: function(value) {
+                            return value % 1 === 0 ? value : ''; // 소수점 제외
+                        }
+                    }
+                }]
+            }
+        }
+    });
+
+
+    // 단일 감정 high 빈도 수 차트
+    let BarData_high = /*[[${BarData_high}]]*/;
+    let BarData_highCtx = document.getElementById('HighChart').getContext('2d');
+    let HighChart = new Chart(BarData_highCtx, {
+        type: 'horizontalBar',
+        data: {
+            labels: [
+                "매우 강한 행복",
+                "매우 강한 중립",
+                "매우 강한 놀람",
+                "매우 강한 혐오",
+                "매우 강한 슬픔",
+                "매우 강한 화남",
+                "매우 강한 두려움"
+            ],
+            datasets: [{
+                label: "단일 감정 빈도(High)",
+                data: BarData_high,
+                backgroundColor: 'rgba(255, 99, 71, 0.2)', // tomato
+                borderColor: 'rgba(255, 99, 71, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                xAxes: [{
+                    ticks: {
+                        beginAtZero: true,
+                        suggestedMax: Math.max(...BarData_high) + 1,
+                        callback: function(value) {
+                            return value % 1 === 0 ? value : ''; // 소수점 제외
+                        }
+                    }
+                }]
+            }
+        }
+    });
+
+    // doughnut Chart Example
+    let Donut_data = /*[[${DonutData}]]*/;
+
+    if(Donut_data != null){
+        let donut_ctx = document.getElementById("myDonutChart").getContext('2d');
+        let myDonutChart = new Chart(donut_ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ["긍정적인 감정", "부정적인 감정", "중립적인 감정"],
+                datasets: [{
+                    data: Donut_data,
+                    backgroundColor: [
+                        "#FFEB3B", // positive
+                        "#3F51B5", // negative
+                        "#4CAF50"  // neutral
+                    ],
+                    hoverBackgroundColor: [
+                        "#FFEB3B", // positive
+                        "#3F51B5", // negative
+                        "#4CAF50"  // neutral
+                    ],
+                    hoverBorderColor: "rgba(234, 236, 244, 1)", // 테두리 색상
+                }],
+            },
+            options: {
+                responsive: true, // 차트를 반응형으로 만들기
+                maintainAspectRatio: false, // 비율을 유지하지 않음
+                tooltips: {
+                    backgroundColor: "rgb(255,255,255)",
+                    bodyFontColor: "#858796",
+                    borderColor: '#dddfeb',
+                    borderWidth: 1,
+                    xPadding: 15,
+                    yPadding: 15,
+                    displayColors: false,
+                    caretPadding: 10,
+                },
+                legend: {
+                    display: true, // 여기에서 true로 설정하면 범례가 표시됩니다.
+                    position: 'top', // 범례의 위치를 설정할 수 있습니다 (top, left, right, bottom 등)
+                },
+                cutoutPercentage: 80,
+            },
+        });
+    }
+
+
+    // ----------------------------------------------------------
+
+    function checkField() {
+        let form = document.forms["emotion_Date_form"];
+
+        try {
+            // 시작 날짜와 끝 날짜 값 가져오기
+            let startDate = form.startDate.value;
+            let endDate = form.endDate.value;
+
+            // 시작 날짜가 입력되지 않았으면
+            if (!startDate) {
+                alert("시작 날짜를 입력하세요.");
+                return false;  // 이동 금지
+            }
+
+            // 끝 날짜가 입력되지 않았으면
+            if (!endDate) {
+                alert("끝 날짜를 입력하세요.");
+                return false;  // 이동 금지
+            }
+
+            // 시작 날짜와 끝 날짜를 Date 객체로 변환
+            let start = new Date(startDate);
+            let end = new Date(endDate);
+
+            // 시작 날짜가 끝 날짜보다 이후인 경우
+            if (start > end) {
+                alert("시작 날짜는 끝 날짜보다 이후일 수 없습니다.");
+                return false;  // 이동 금지
+            }
+
+            // 끝 날짜가 시작 날짜보다 이전인 경우
+            if (end < start) {
+                alert("끝 날짜는 시작 날짜보다 이전일 수 없습니다.");
+                return false;  // 이동 금지
+            }
+
+        } catch (error) {
+            alert(error);
+            return false;  // 오류 발생 시 이동 금지
+        }
+
+        // 모든 검증이 통과되면 true 반환
+        return true;
+    }
+
+    /*]]>*/
+</script>
+</body>
+</html>
