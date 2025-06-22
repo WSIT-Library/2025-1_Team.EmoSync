@@ -1,0 +1,22 @@
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>알림</title>
+</head>
+<body>
+<input type="hidden" id="inquiryId" th:value="${inquiryId}">
+<script  src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+    const inquiryId = $("#inquiryId").val();
+    if (window.confirm("문의글 수정이 완료되었습니다."))
+    {
+        window.location.href = "/pages/inquiry/"+inquiryId;
+    }
+    else
+    {
+        window.location.href = "/pages/inquiry/"+inquiryId;
+    }
+</script>
+</body>
+</html>

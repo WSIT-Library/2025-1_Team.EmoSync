@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">고객 문의 게시판</span></h1>
+        </div>
+        <div class="row gx-2 justify-content-center">
+            <div class="col-lg-11 col-xl-10 col-xxl-9">
+                <!-- Skills Section-->
+                <section>
+                    <!-- Skillset Card-->
+                    <div class="card shadow border-0 rounded-4 mb-5">
+                        <div class="card-body">
+                            <input type="hidden" id="inquiryId" th:value="${inquiry.id}">
+                            <div>
+                                [<span class="tag" th:if="${#strings.equals(inquiry.respond, 'Y')}">답변완료</span>
+                                <span class="tag" th:if="${#strings.equals(inquiry.respond, 'N')}">미답변</span>/
+                                <span th:if="${#strings.equals(inquiry.category, 'payment')}">결제</span>
+                                <span th:if="${#strings.equals(inquiry.category, 'service')}">서비스</span>
+                                <span th:if="${#strings.equals(inquiry.category, 'member')}">질문</span>
+                                <span th:if="${#strings.equals(inquiry.category, 'other')}">기타</span>] <span th:text="${inquiry.title}"></span>
+                            </div>
+                            <hr>
+                            <div>
+                                <div id="forum_writer" class="forum_item_fs">작성자: <a class="a_tag_style" th:text="${inquiry.member.id}"></a></div>
+                                <div id="forum_date" class="forum_item_fs">
+                                    <div id="span_createdDate" th:text="|작성일: ${#temporals.format(inquiry.createdDate, 'yyyy-MM-dd HH:mm')}|">작성일</div>
+                                    <div id="span_modifiedDate" th:text="|수정일: ${#temporals.format(inquiry.modifiedDate, 'yyyy-MM-dd HH:mm')}|">수정일</div>
+                                </div>
+                                <br>
+                                <div id="forum_view_recommend_comment_cnt" class="forum_item_fs">
+                                    <span>조회수 [[${inquiry.views}]]</span>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="mb-5" th:utext="${inquiry.content}">내용</div>
+                            <br>
+                            <div id="Buttons">
+                                <button type="button" class="btn btn-dark" onclick="location.href='/pages/inquiry/inquiryBoard'">목록</button>
+                                <button type="button" class="btn btn-primary" onclick="CheckUpdate()">수정</button>
+                                <button type="button" class="btn btn-danger" onclick="checkDelete()">삭제</button>
+                            </div>
+                            <br>
+                            <hr>
+                            <div class="comment_title" th:text="|[답변]|"></div>
+
+                            <!-- 댓글 fragment 가져올 영역 -->
+                            <div th:replace="~{pages/respond/_comments :: CommentFragment(input_respondDto=${respondDto}, input_userId=${userId}, input_inquiry=${inquiry})}"></div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script>
+    // 게시글 수정 처리
+    function CheckUpdate(){
+        return window.location.href='/pages/inquiry/'+ $("#inquiryId").val() +'/edit';
+    }
+
+    // 게시글 삭제 처리
+    function checkDelete(){
+        if (window.confirm("글을 삭제하시겠습니까?") === true) {
+            return window.location.href='/pages/inquiry/'+ $("#inquiryId").val() +'/delete';
+        } else {}
+
+    }
+</script>
+</body>
+</html>

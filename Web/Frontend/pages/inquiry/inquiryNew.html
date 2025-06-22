@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/summernote@0.9.0/dist/summernote-lite.min.js"></script>
+    <script src="/summernote/summernote-ko-KR.min.js"></script>
+    <style>
+        #image{
+            width:80%;
+            resize: none;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">고객 문의 게시판</span></h1>
+        </div>
+        <div class="row gx-2 justify-content-center">
+            <div class="col-lg-11 col-xl-10 col-xxl-9">
+                <section>
+                    <div class="card shadow border-0 rounded-4 mb-5">
+                        <div class="card-body">
+                            <form name="new_forum_form" class="container" action="/inquiry/create" method="post" onsubmit="return checkField();">
+                                <div class="mb-3">
+                                    <div style="display: inline-block">
+                                        <label class="form-label" for="category">문의유형</label>
+                                        <select id="category" name="category">
+                                            <option value="service">서비스</option>
+                                            <option value="payment">결제</option>
+                                            <option value="member">회원</option>
+                                            <option value="other">기타</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-check" style="display: inline-block">
+                                        <label class="form-check-label" for="secret">비밀글</label>
+                                        <input class="form-check-input" type="checkbox" value="Y" id="secret" name="secret">
+                                    </div>
+                                    <div>
+                                        <label class="form-label" for="title">제목</label>
+                                        <input type="text" id="title" class="form-control" name="title" maxlength=50 size="90">
+
+                                        <input type="hidden" th:value="${userId}" name="writerID">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label" for="content">내용</label>
+                                    <textarea class="form-control" rows="8" id="content" name="content"></textarea>
+                                    <br>
+                                    <label for="image">첨부이미지: 0개</label><br>
+                                    <textarea type="text" id="image" name="image" readonly></textarea>
+                                </div>
+                                <div style="float:right;">
+                                    <button type="submit" class="btn btn-primary" id="submitBtn">등록</button>
+                                    <button type="button" class="btn btn-danger" onclick="location.href='/pages/inquiry/inquiryBoard'">취소</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    let FileRoot = /*[[${FileRoot}]]*/;
+
+    // 페이지 이탈 경고
+    $(window).bind('beforeunload', function() {
+        return false;
+    });
+
+    // 첨부한 이미지 개수
+    let ImageCount = 0;
+
+    // 첨부한 이미지 파일 이름 목록
+    let ImageList =[];
+
+    // 폼 데이터 전송 전 확인
+    function checkField(){
+        let inputs = document.new_forum_form;
+        if(!inputs.title.value){	// name 속성이 title 인 요소의 value 가 없으면 true
+            alert("제목을 입력하세요.");
+            return false;	// 이동 금지.
+        }
+        if(!inputs.writerID.value){
+            alert("작성자를 입력하세요.");
+            return false;
+        }
+        if(!inputs.content.value){
+            alert("내용을 입력하세요");
+            return false;
+        }
+        else{
+            $(window).unbind('beforeunload');
+            return true;
+        }
+    }
+
+    // 이미지 업로드
+    function imageUpload(file){
+        let formData = new FormData();
+        formData.append("file", file);
+
+        $.ajax({
+            url : "/upload/inquiry/imageUpload",
+            type : "POST",
+            data : formData,
+            // contentType, processData 설정 안하면 TypeError: Illegal invocation 오류가 발생한다
+            contentType: false,
+            processData: false,
+            encType : "multipart/form-data",
+            success : function (data) {
+                // 첨부한 이미지 개수 증가
+                ImageCount++;
+
+                // 첨부한 이미지 파일 이름 추가
+                ImageList.push(data);
+
+                // 글에 이미지 넣기
+                $("#content").summernote("insertImage", FileRoot + "upload/inquiry/TempImage/" + data);
+
+                // 첨부이미지 개수 출력
+                $("label[for='image']").text('첨부이미지: '+ImageCount+'개');
+
+                // 첨부이미지 목록 출력
+                $("#image").text(ImageList);
+            },
+            error(e){
+                console.log("error : "+ e);
+            }
+        });
+    }
+
+    // 이미지 삭제
+    function deleteFile(fileName) {
+        let formData = new FormData();
+        formData.append("fileName", fileName);
+
+        $.ajax({
+            url : "/upload/inquiry/imageDelete",
+            type : "POST",
+            data : formData,
+            // contentType, processData 설정 안하면 TypeError: Illegal invocation 오류가 발생한다
+            contentType: false,
+            processData: false,
+            encType : "multipart/form-data",
+            success : function (file){
+                // 첨부한 이미지 개수 감소
+                ImageCount--;
+
+                // 첨부한 이미지 파일 이름 삭제
+                ImageList = ImageList.filter((e) => e !== file);
+
+                // 첨부이미지 개수 출력
+                $("label[for='image']").text('첨부이미지: '+ImageCount+'개');
+
+                // 첨부이미지 목록 출력
+                $("#image").text(ImageList);
+            }
+        });
+    }
+
+    // summernote 설정
+    $(document).ready(function () {
+        $('#content').summernote({
+            // 코드 보기 필터 비활성화
+            codeviewFilter: false,
+            codeviewIframeFilter: false,
+            // 에디터 높이
+            height: 500,
+            // 에디터 한글 설정
+            lang: "ko-KR",
+            // 에디터에 커서 이동 (input 창의 autofocus 라고 생각)
+            focus : true,
+            toolbar: [
+                // 글꼴 설정
+                ['fontname', ['fontname']],
+                // 글자 크기 설정
+                ['fontsize', ['fontsize']],
+                // 굵기, 기울임꼴, 밑줄,취소 선, 서식지우기
+                ['style', ['bold', 'italic', 'underline','strikethrough', 'clear']],
+                // 글자색
+                ['color', ['forecolor','color']],
+                // 표만들기
+                ['table', ['table']],
+                // 글머리 기호, 번호매기기, 문단정렬
+                ['para', ['ul', 'ol', 'paragraph']],
+                // 줄간격
+                ['height', ['height']],
+                // 코드보기, 확대해서보기, 도움말
+                ['view', ['codeview','fullscreen', 'help']],
+                // 이미지 첨부
+                ['insert', ['picture']]
+            ],
+            // 추가한 글꼴
+            fontNames: ['Arial', 'Arial Black', 'Comic Sans MS', 'Courier New','맑은 고딕','궁서','굴림체','굴림','돋음체','바탕체'],
+            // 추가한 폰트사이즈
+            fontSizes: ['8','9','10','11','12','14','16','18','20','22','24','28','30','36','50','72'],
+            callbacks : {
+                // 파일 업로드
+                onImageUpload : function (files) {
+                    // 이미지는 최대 5개까지 첨부 가능(files.length 는 한번에 첨부한 파일 개수, ImageCount 는 첨부한 파일의 총 개수)
+                    if((files.length <= 5) && ((ImageCount+files.length) < 6)){
+                        for(let i=0; i < files.length; i++){
+                            // 이미지가 여러개일 경우
+                            imageUpload(files[i]);
+                        }
+                    }
+                    else{
+                        alert('이미지는 최대 5개까지 첨부 가능합니다.');
+                    }
+                },
+                // 파일 삭제
+                onMediaDelete: function ($target){
+                    if(confirm("이미지를 삭제하시겠습니까?")){
+                        let fileName = $target.attr('src').split('/').pop();
+                        deleteFile(fileName);
+                    }
+                }
+            }
+        });
+    });
+    /*]]>*/
+</script>
+</body>
+</html>

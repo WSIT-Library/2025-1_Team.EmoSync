@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    <link href="/css/inquiry.css" rel="stylesheet" />
+</head>
+<body class="d-flex flex-column h-100">
+<main class="flex-shrink-0">
+    <!-- Navigation-->
+    <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+
+    <!-- Page Content-->
+    <div class="container px-3 my-5">
+        <div class="text-center mb-5">
+            <h1 class="display-6 fw-bolder mb-0"><span class="d-inline">고객 문의 게시판</span></h1>
+        </div>
+        <div class="row gx-2 justify-content-center">
+            <div class="col-lg-11 col-xl-10 col-xxl-9">
+                <!-- Skills Section-->
+                <section>
+                    <!-- Skillset Card-->
+                    <div class="card shadow border-0 rounded-4 mb-5">
+                        <div class="card-body">
+                            <ul class="board-list-title">
+                                <li class="txt-14">번호</li>
+                                <li class="txt-14">문의유형</li>
+                                <li class="board-title-con txt-14">제목</li>
+                                <li class="txt-14">작성자</li>
+                                <li class="txt-14">작성일</li>
+                                <li class="txt-14 count">조회수</li>
+                                <li class="txt-14">답변</li>
+                            </ul>
+                            <ul class="board-list no_dot" th:if="${InquiryLists.totalPages} > 0">
+                                <li th:each="InquiryList : ${InquiryLists}">
+                                    <ul class="board-list-inner">
+                                        <li class="board-num">
+                                            <span class="tag-square red" th:text="${InquiryList.id}">글 ID</span>
+                                        </li>
+                                        <li>
+                                            <span class="tag" th:if="${#strings.equals(InquiryList.category, 'service')}">서비스</span>
+                                            <span class="tag" th:if="${#strings.equals(InquiryList.category, 'payment')}">결제</span>
+                                            <span class="tag" th:if="${#strings.equals(InquiryList.category, 'member')}">회원</span>
+                                            <span class="tag" th:if="${#strings.equals(InquiryList.category, 'other')}">기타</span>
+                                        </li>
+                                        <li class="board-title-con txt-l">
+                                            <a class="a_tag_style" th:href="@{/pages/inquiry/{id}(id=${InquiryList.id})}">
+                                                <!--게시글에 이미지가 첨부되어 있는 경우-->
+                                                <th:block th:if="${not #strings.isEmpty(InquiryList.image)}">
+                                                    <!--비밀글인 경우-->
+                                                    <th:block th:if="${#strings.equals(InquiryList.secret, 'Y')}">
+                                                        <i class="bi bi-lock-fill"></i>
+                                                        <i class="bi bi-image"></i>[[${InquiryList.title}]]
+                                                    </th:block>
+
+                                                    <!--전체 공개인 경우-->
+                                                    <th:block th:if="${#strings.equals(InquiryList.secret, 'N')}">
+                                                        <i class="bi bi-image"></i>[[${InquiryList.title}]]
+                                                    </th:block>
+                                                </th:block>
+
+                                                <!--게시글에 이미지 없는 경우-->
+                                                <th:block th:if="${#strings.isEmpty(InquiryList.image)}">
+                                                    <!--비밀글인 경우-->
+                                                    <th:block th:if="${#strings.equals(InquiryList.secret, 'Y')}">
+                                                        <i class="bi bi-lock-fill"></i>[[${InquiryList.title}]]
+                                                    </th:block>
+
+                                                    <!--전체 공개인 경우-->
+                                                    <th:block th:if="${#strings.equals(InquiryList.secret, 'N')}">
+                                                        [[${InquiryList.title}]]
+                                                    </th:block>
+                                                </th:block>
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <p class="li_item"><i class="bi bi-pencil-fill"></i>[[${InquiryList.member.id}]]</p>
+                                        </li>
+                                        <li>
+                                            <p class="date"
+                                               th:if="${#dates.format(#calendars.createNow(), 'yyyy-MM-dd')} == ${#temporals.format(InquiryList.createdDate, 'yyyy-MM-dd')}"
+                                               th:text="${#temporals.format(InquiryList.createdDate, 'HH:mm')}">시간</p>
+
+                                            <p class="date"
+                                               th:unless="${#dates.format(#calendars.createNow(), 'yyyy-MM-dd')} == ${#temporals.format(InquiryList.createdDate, 'yyyy-MM-dd')}"
+                                               th:text="${#temporals.format(InquiryList.createdDate, 'MM-dd')}">날짜</p>
+                                        </li>
+                                        <li><p class="li_item"><i class="bi bi-eye-fill"></i>[[${InquiryList.views}]]</p></li>
+                                        <li>
+                                            <p class="li_item">
+                                                <span class="tag" th:if="${#strings.equals(InquiryList.respond, 'Y')}">완료</span>
+                                                <span class="tag" th:if="${#strings.equals(InquiryList.respond, 'N')}">미답변</span>
+                                            </p>
+                                        </li>
+                                    </ul>
+                                </li>
+                            </ul>
+                            <div th:if="${InquiryLists.totalPages} == 0" class="text-center">게시글이 없습니다.</div>
+                            <hr>
+                            <div class="parent_height_set">
+                                <button class="btn btn-primary write_forum_btn" onclick="location.href='/pages/inquiry/inquiryNew'">글쓰기</button>
+                            </div>
+
+                            <br>
+                            <th:block th:with="start=${T(java.lang.Math).floor(InquiryLists.number/10)*10 + 1},
+                        last=(${start + 9 < InquiryLists.totalPages ? start + 9 : (InquiryLists.totalPages > 0 ? InquiryLists.totalPages : 1)}),
+                        firstAddr=@{/pages/inquiry/inquiryBoard(page=1)},
+                        prevAddr=@{/pages/inquiry/inquiryBoard(page=${InquiryLists.number})},
+                        nextAddr=@{/pages/inquiry/inquiryBoard(page=${InquiryLists.number + 2})},
+                        lastAddr=@{/pages/inquiry/inquiryBoard(page=${InquiryLists.totalPages})}">
+                                <!-- pagination fragment -->
+                                <div>
+                                    <ul class="pc_pagination pagination">
+                                        <!--맨 처음 페이지로 이동 -->
+                                        <li class="page-item pc_pagination_btn">
+                                            <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                                <span aria-hidden="true"><<</span>
+                                            </a>
+                                        </li>
+                                        <!-- 이전 페이지로 가기 버튼 -->
+                                        <li class="page-item" th:class="${InquiryLists.first} ? 'disabled'">
+                                            <a class="page-link" th:href="${InquiryLists.first} ? '#' :${prevAddr}"
+                                               aria-label="Previous">
+                                                <span aria-hidden="true"><</span>
+                                            </a>
+                                        </li>
+                                        <!--1,2,3,4,.. 등 페이지-->
+                                        <li class="page-item" th:each="page: ${#numbers.sequence(start, last)}"
+                                            th:class="${page == InquiryLists.number + 1} ? 'active'">
+                                            <a class="page-link" th:text="${page}" th:href="@{/pages/inquiry/inquiryBoard(page=${page})}"></a>
+                                        </li>
+                                        <!--다음 페이지로 -->
+                                        <li class="page-item" th:class="${InquiryLists.last} ? 'disabled'">
+                                            <a class="page-link" th:href="${InquiryLists.last} ? '#' : ${nextAddr}"
+                                               aria-label="Next">
+                                                <span aria-hidden="true">></span>
+                                            </a>
+                                        </li>
+                                        <!--맨 마지막 페이지로 이동 -->
+                                        <li class="page-item pc_pagination_btn">
+                                            <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                                <span aria-hidden="true">>></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <!--모바일용-->
+                                <div>
+                                    <ul class="pagination mobile_pagination mobile_pagination_btn parent_height_set">
+                                        <!--맨 처음 페이지로 이동 -->
+                                        <li class="page-item mobile_first_btn">
+                                            <a class="page-link" th:href="${firstAddr}" aria-label="First">
+                                                <span aria-hidden="true"><<</span>
+                                            </a>
+                                        </li>
+                                        <!--맨 마지막 페이지로 이동 -->
+                                        <li class="page-item mobile_last_btn">
+                                            <a class="page-link" th:href="${lastAddr}" aria-label="Last">
+                                                <span aria-hidden="true">>></span>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                                <!-- pagination fragment -->
+                            </th:block>
+
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</main>
+<!-- Footer 영역 fragment -->
+<th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+<!-- script 영역 fragment -->
+<th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+</body>
+</html>

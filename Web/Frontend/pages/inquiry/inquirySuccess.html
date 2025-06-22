@@ -1,0 +1,22 @@
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>알림</title>
+</head>
+<body>
+<input type="hidden" id="message" th:value="${message}">
+<script  src="https://code.jquery.com/jquery-latest.min.js"></script>
+<script>
+    const msg = $("#message").val();
+    if (window.confirm(msg))
+    {
+        window.location.href = "/pages/inquiry/inquiryBoard"
+    }
+    else
+    {
+        window.location.href = "/pages/inquiry/inquiryBoard"
+    }
+</script>
+</body>
+</html>
