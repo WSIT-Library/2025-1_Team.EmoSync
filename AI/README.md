@@ -1,3 +1,4 @@
-FlaskTest.py: Flask 서버
-<br>
-generated04.py: AI 모델
+| 이름 | 역할 |
+| --- | --- |
+| flaskTest.py | Flask 서버 |
+| generated04.py | AI 모델 |
