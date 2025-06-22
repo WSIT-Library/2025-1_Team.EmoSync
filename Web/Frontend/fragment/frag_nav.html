@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org" >
+<th:block th:fragment="NavFragment(userId)">
+    <nav class="navbar navbar-expand-lg navbar-light py-3 bg-white">
+        <div class="container px-5">
+            <a class="navbar-brand" href="/pages/index"><span class="fw-bolder text-primary">EmoSync</span></a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+            <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 small fw-bolder">
+                    <li class="nav-item"><a class="nav-link" href="/pages/index">홈</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/pages/contents/user_photo">콘텐츠생성</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/pages/plan/intro">요금제</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/pages/inquiry/inquiryBoard">고객지원</a></li>
+                    <th:block th:if="${userId} == null">
+                        <li class="nav-item"><a class="nav-link" href="/members/login">로그인</a></li>
+                        <li class="nav-item"><a class="nav-link" href="/members/register">회원가입</a></li>
+                    </th:block>
+
+                    <th:block th:if="${userId} != null">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="javascript:void(0);" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                마이페이지
+                            </a>
+
+                            <ul class="dropdown-menu custom-dropdown">
+                                <li>
+                                    <a class="dropdown-item" href="/members/MyPage_UserInfo">
+                                        <i class="bi bi-person-circle me-2"></i> 회원/요금제 정보
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="/pages/contents/notification_list">
+                                        <i class="bi bi-bell-fill"></i> 생성 알림
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="/pages/contents/contents_list">
+                                        <i class="bi bi-bookmark-heart me-2"></i> 저장된 콘텐츠 <span class="badge bg-primary">Premium</span>
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="/pages/contents/emotion_stats">
+                                        <i class="bi bi-graph-up-arrow me-2"></i> 감정 통계 <span class="badge bg-primary">Premium</span>
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="nav-item"><a class="nav-link" href="javascript:void(0);" onclick="logout()">[[${userId}]]님 로그아웃</a></li>
+                    </th:block>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    <!-- 토스트 알림창 -->
+    <div class="toast position-fixed bottom-0 end-0 p-3" style="z-index: 11" role="alert" aria-live="assertive" aria-atomic="true" data-bs-delay="60000">
+        <div class="d-flex">
+            <a id="toast_href" class="a_tag_style"><div class="toast-body"></div></a>
+            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+    </div>
+    <input type="hidden" id="userId" th:value="${userId}">
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // SSE 연결 설정
+            let userId = $('#userId').val();
+            if(userId != null){
+                const eventSource = new EventSource('/sse/subscribe');
+
+                // 서버에서 .name(userId)로 전송한 정보 가져오기
+                eventSource.addEventListener(userId, function(event) {
+                    const obj = JSON.parse(event.data);
+                    // 콘텐츠 생성 알림 출력
+                    if (obj.receiver_id !== "sse_init_msg") {
+                        $('.toast-body').text(obj.notification_msg);
+                        $('#toast_href').attr("href", obj.related_url);
+                        $('.toast').toast('show');
+                    }
+                });
+            }
+
+            // 메뉴 드롭다운 처리
+            const dropdownToggles = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            dropdownToggles.forEach(toggle => {
+                const parent = toggle.closest('.dropdown');
+                const menu = parent.querySelector('.custom-dropdown');
+
+                // 열릴 때
+                parent.addEventListener('show.bs.dropdown', () => {
+                    menu.classList.add('showing');
+                    setTimeout(() => {
+                        menu.classList.add('visible');
+                    }, 10); // 짧은 딜레이로 트랜지션 트리거
+                });
+
+                // 닫힐 때
+                parent.addEventListener('hide.bs.dropdown', () => {
+                    menu.classList.remove('visible');
+                    setTimeout(() => {
+                        menu.classList.remove('showing');
+                    }, 300); // 트랜지션 시간 후 visibility를 숨김
+                });
+            });
+        });
+
+
+        function logout(){
+            if (window.confirm('로그아웃 하시겠습니까?'))
+                window.location.href = "/members/logout";
+        }
+    </script>
+</th:block>
+</html>
