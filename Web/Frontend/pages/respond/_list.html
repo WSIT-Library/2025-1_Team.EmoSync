@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org" th:fragment="Comment_ListFragment(respondDto, userId, inquiry)">
+<head>
+    <link href="/css/main.css" rel="stylesheet" />
+</head>
+
+<div id="comments-list">
+    <!-- 댓글이 존재하는 경우-->
+    <div th:if="${#lists.size(respondDto) != 0}">
+        <input type="hidden" id="inquiryId" th:value="${inquiry.id}">
+        <!-- 댓글 리스트 출력 반복문-->
+        <div th:each="respond : ${respondDto}">
+            <div class="card m-2" th:attr="id='comments-'+${respond.id}">
+                <div class="card-header">
+                    <div th:if="${#strings.equals(respond.writerId, 'root')}">관리자님의 답변</div>
+                    <div class="Date_span">
+                        <span th:text="|작성: ${#temporals.format(respond.createDate, 'yyyy-MM-dd HH:mm')}|">작성일</span><br>
+                        <span th:text="|수정: ${#temporals.format(respond.modifiedDate, 'yyyy-MM-dd HH:mm')}|">수정일</span>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="comment_body">[[${respond.body}]]</div>
+                    <!-- 수정, 삭제 버튼은 관리자에게만 보여줌 -->
+                    <div th:if="${#strings.equals(userId, 'root')}" class="comment_modify_delete_btn">
+                        <button type="button" class="btn btn-sm btn-outline-primary"
+                                data-bs-toggle="modal"
+                                data-bs-target="#comment-edit-modal"
+                                th:attr="data-bs-id=${respond.id},
+                                     data-bs-writerId=${respond.writerId},
+                                     data-bs-body=${respond.body},
+                                     data-bs-inquiry-id=${respond.inquiryId}">
+                            수정</button>
+                        <button type="button" class="btn btn-sm btn-outline-danger comment-delete-btn"
+                                th:attr="data-comment-id=${respond.id}">삭제</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<!--    댓글이 존재하지 않는 경우-->
+    <div class="style_center" th:if="${#lists.size(respondDto) == 0}">답변이 없습니다.</div>
+    <br>
+</div>
+
+<!--모달창-->
+<div class="modal fade" id="comment-edit-modal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">답변 수정</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <!-- 댓글 수정 폼-->
+                <form>
+                    <div class="mb-3">
+                        <span id="edit-comment-writerId"></span>
+                    </div>
+                    <div class="mb-3">
+                        <textarea type="text" class="form-control" rows="3" id="edit-comment-body" placeholder="답변을 입력해주세요."></textarea>
+                    </div>
+                    <input type="hidden" id="edit-comment-id">
+                    <input type="hidden" id="edit-comment-inquiry-id">
+                    <button type="submit" class="btn btn-primary" id="comment-update-btn">수정 완료</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const commentEditModal = document.querySelector("#comment-edit-modal");
+    commentEditModal.addEventListener("show.bs.modal", function (event){
+        //트리거 버튼 선택
+        const triggerBtn = event.relatedTarget;
+
+        //데이터 가져오기
+        const id = triggerBtn.getAttribute("data-bs-id");
+        const writerId = triggerBtn.getAttribute("data-bs-writerId");
+        const body = triggerBtn.getAttribute("data-bs-body");
+        const inquiryId = triggerBtn.getAttribute("data-bs-inquiry-id");
+
+        //수정 폼에 데이터 반영
+        $("#edit-comment-writerId").text(writerId);
+        document.querySelector("#edit-comment-body").value = body;
+        document.querySelector("#edit-comment-id").value = id;
+        document.querySelector("#edit-comment-inquiry-id").value = inquiryId;
+    });
+
+    // 댓글 수정
+    const commentUpdateBtn = document.querySelector("#comment-update-btn");
+    commentUpdateBtn.addEventListener("click", function (){
+        const comment = {
+            id: document.querySelector("#edit-comment-id").value,
+            body: document.querySelector("#edit-comment-body").value
+        };
+
+        const url = "/respond/update/" + comment.id;
+        fetch(url, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(comment)
+        }).then(response=>response.text())
+            .then((text)=>{
+                if(text !== "Success"){
+                    alert(text);
+                    return;
+                }
+
+                //수정 성공시 메시지 창 띄우기
+                const msg = `답변을 수정했습니다.`;
+                alert(msg);
+                window.location.reload();
+            });
+    });
+
+    // 댓글 삭제
+    const commentDeleteBtn = document.querySelectorAll(".comment-delete-btn");
+    commentDeleteBtn.forEach(btn => {
+        btn.addEventListener("click", (e) => {
+            //이벤트 발생 요소 선택
+            const commentDeleteBtn = e.target;
+
+            //삭제 댓글 id 가져오기
+            const commentId = commentDeleteBtn.getAttribute("data-comment-id");
+            const inquiryId = $("#inquiryId").val();
+
+            if (window.confirm('답변을 삭제하시겠습니까?'))
+            {
+                //삭제 REST API 호출
+                const url = `/respond/delete/${inquiryId}/${commentId}`;
+
+                fetch(url, {
+                    method: "DELETE"
+                }).then(response=>response.text())
+                    .then((text)=>{
+                        if(text !== "Success"){
+                            alert(text);
+                            return;
+                        }
+
+                        //삭제 성공시 메시지 창 띄우기
+                        const msg = `답글을 삭제했습니다.`;
+                        alert(msg);
+                        window.location.reload();
+                    })
+            }
+        });
+
+    });
+</script>
+</html>
+

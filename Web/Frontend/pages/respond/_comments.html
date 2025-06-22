@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org" th:fragment="CommentFragment(input_respondDto, input_userId, input_inquiry)">
+<div>
+    <!--    댓글 목록 보기-->
+    <div th:replace="~{pages/respond/_list :: Comment_ListFragment(respondDto=${input_respondDto}, userId=${input_userId}, inquiry=${input_inquiry})}"></div>
+
+    <!-- 관리자만 답변 작성 form 보여주기 -->
+    <th:block th:if="${#strings.equals(input_userId, 'root')}">
+        <!--    새 댓글 작성하기-->
+        <div th:replace="~{pages/respond/_new :: Comment_NewFragment(userId=${input_userId}, inquiry=${input_inquiry})}"></div>
+    </th:block>
+</div>
+</html>
