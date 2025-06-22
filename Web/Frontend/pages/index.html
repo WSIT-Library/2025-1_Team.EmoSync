@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="https://www.thymeleaf.org">
+    <head>
+        <th:block th:replace="~{fragments/frag_head :: HeadFragment}"></th:block>
+    </head>
+    <body class="d-flex flex-column h-100">
+        <main class="flex-shrink-0">
+            <!-- Navigation-->
+            <th:block th:replace="~{fragments/frag_nav :: NavFragment(userId=${userId})}"></th:block>
+            <!-- Header-->
+            <header class="py-5">
+                <div class="container px-5 pb-5">
+                    <div class="row gx-5 align-items-center">
+                        <div class="col-xxl-5">
+                            <!-- Header text content-->
+                            <div class="text-center text-xxl-start">
+                                <div class="badge bg-gradient-primary-to-secondary text-white mb-4"><div class="text-uppercase">Empathy &middot; custom &middot; cure</div></div>
+                                <div class="fs-3 fw-light text-muted">감정 맞춤형 콘텐츠 생성기</div>
+                                <h1 class="display-3 fw-bolder mb-5"><span class="text-gradient d-inline">마음을 읽고, <br>감정을 더하다</span></h1>
+                                <div class="d-grid gap-3 d-sm-flex justify-content-sm-center justify-content-xxl-start mb-3">
+                                    <th:block th:if="${userId} == null">
+                                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="/members/login">로그인</a>
+                                        <a class="btn btn-outline-dark btn-lg px-5 py-3 fs-6 fw-bolder" href="/members/register">회원가입</a>
+                                    </th:block>
+                                    <th:block th:if="${userId} != null">
+                                        <a class="btn btn-primary btn-lg px-5 py-3 me-sm-3 fs-6 fw-bolder" href="/pages/contents/user_photo">콘텐츠 생성하기</a>
+                                    </th:block>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-xxl-7">
+                            <!-- Header profile picture-->
+                            <div class="d-flex justify-content-center mt-5 mt-xxl-0">
+                                <div class="profile bg-gradient-primary-to-secondary">
+                                    <!-- TIP: For best results, use a photo with a transparent background like the demo example below-->
+                                    <!-- Watch a tutorial on how to do this on YouTube (link)-->
+                                    <img class="profile-img" src="/assets/profile.png" alt="..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            <!-- About Section-->
+            <section class="bg-light py-5">
+                <div class="container px-5">
+                    <div class="row gx-5 justify-content-center">
+                        <div class="col-xxl-8">
+                            <div class="text-center my-5">
+                                <h2 class="display-5 fw-bolder"><span class="text-gradient d-inline">About Our Services</span></h2>
+                                <p class="lead fw-light mb-4">사용자의 표정을 인식해 맞춤형 미디어를 제공.</p>
+                                <p class="text-muted">날이 갈수록 늘어가는 우울증 환자, 자신의 감정을 숨겨야 하는 현대인들.<br>EmoSync를 통해 감정을 돌아보는건 어떨까요? Ai를 통해 나도 몰랐던 나의 감정을 확인해보세요!</p>
+                                <div class="d-flex justify-content-center fs-2 gap-4">
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Page Content-->
+            <div class="container px-5 my-5">
+                <div class="row gx-5 justify-content-center">
+                    <div class="col-lg-11 col-xl-9 col-xxl-8">
+                        <!-- Experience Section-->
+                        <section>
+                            <!-- Experience Card 1-->
+                            <div class="card shadow border-0 rounded-4 mb-5">
+                                <div class="card-body p-5">
+                                    <div class="row align-items-center gx-5">
+                                        <div class="col-12 col-lg text-center text-lg-start mb-4 mb-lg-0">
+                                            <div class="bg-light p-4 rounded-4 d-flex flex-column flex-sm-row align-items-center" style="min-height: 100px;">
+                                                <img src="/assets/face.png" alt="face" style="width: 200px; height: 300px; margin-bottom: 10px; margin-right: 0;" class="me-sm-3 mb-sm-0" />
+                                                <div class="text-start">
+                                                    <div class="text-primary fw-bolder mb-1">사용자 표정 인식</div>
+                                                    <div class="small text-muted">웹 페이지를 실행하고 얼굴을 분석받아보세요. 당신이 느끼지 못했던 감정까지 Ai가 분석하여 당신을 위로하거나, 즐겁게 해줄 수 있습니다. <br />
+                                                        감정을 숨기지 말고 이젠 표현해 보세요!</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card shadow border-0 rounded-4 mb-5">
+                                <div class="card-body p-5">
+                                    <div class="row align-items-center gx-5">
+                                        <div class="col-12 col-lg text-center text-lg-start mb-4 mb-lg-0">
+                                            <div class="bg-light p-4 rounded-4 d-flex flex-column flex-sm-row align-items-center" style="min-height: 100px;">
+                                                <img src="/assets/ai_logo.png" alt="ai_logo" style="width: 200px; height: 300px; margin-bottom: 10px; margin-right: 0;" class="me-sm-3 mb-sm-0" />
+                                                <div class="text-start">
+                                                    <div class="text-primary fw-bolder mb-1">맞춤형 콘텐츠 생성</div>
+                                                    <div class="small text-muted">표정 분석 후 Ai는 당신의 현재 기분에 따라 맞춤형 이미지, 음악을 생성할 것 입니다.<br>
+                                                        화가 나는 표정이면 고요한 이미지를, 슬픈 표정이라면 위로의 음악을 만들어 당신의 마음을 치유할 수 있습니다!</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <!-- Education Section-->
+                        <section>
+                            <h2 class="text-secondary fw-bolder mb-4">How to use
+                            </h2>
+                            <!-- Education Card 1-->
+                            <div class="card shadow border-0 rounded-4 mb-5">
+                                <div class="card-body p-5">
+                                    <div class="row align-items-center gx-5">
+                                        <div class="col text-center text-lg-start mb-4 mb-lg-0">
+                                            <div class="bg-light p-4 rounded-4">
+                                                <div class="mb-2">
+                                                    <div class="small fw-bolder">콘텐츠 생성</div>
+                                                    <div class="small text-muted">웹 사이트를 실행 후, 카메라를 준비하고<br>
+                                                        얼굴을 인식시키면 AI가 사용자의 얼굴을 인식합니다.<br>
+                                                        그 후 콘텐츠 생성 버튼을 누르기만 하면 맞춤형 콘텐츠가 생성됩니다.</div>
+                                                    <div class="small text-muted">ㅤ</div>
+
+                                                    <div class="small fw-bolder">보관된 콘텐츠</div>
+                                                    <div class="small text-muted">한 번 만들어진 콘텐츠는 일회성으로 삭제되지 않고, 보관됩니다.<br>
+                                                        날짜별로 정리된 콘텐츠를 다음에 다시 볼 수 있습니다.</div>
+                                                    <div class="small text-muted">ㅤ</div>
+
+                                                    <div class="small fw-bolder">회원가입</div>
+                                                    <div class="small text-muted">간단한 회원가입 후, 자신의 페이지에서<br>
+                                                        나만의 콘텐츠들을 이용 할 수 있습니다.</div>
+                                                    <div class="small text-muted">ㅤ</div>
+
+                                                    <div class="small fw-bolder">고객문의</div>
+                                                    <div class="small text-muted">EmoSync 이용 중 발생한 문제나 불편사항 등을 문의 해 주시면<br>
+                                                        신속하게 답변을 받을 수 있습니다.</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </section>
+                        <!-- Divider-->
+                        <div class="pb-5"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- Footer 영역 fragment -->
+        <th:block th:replace="~{fragments/frag_footer :: FooterFragment}"></th:block>
+        <!-- script 영역 fragment -->
+        <th:block th:replace="~{fragments/frag_script :: ScriptFragment}"></th:block>
+    </body>
+</html>
